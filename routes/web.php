@@ -17,6 +17,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/tests', function(){
-    return 'hello';
-});
+Route::view('forgot_password', 'auth.reset_password')->name('password.reset');

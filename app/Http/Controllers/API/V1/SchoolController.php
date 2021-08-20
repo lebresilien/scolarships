@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\API\BaseController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use App\Models\{School, User};
 use Illuminate\Support\Str;
 
@@ -103,10 +104,11 @@ class SchoolController extends BaseController
      *     )
      * )
      */
-    public function show($id)
+    public function show($slug)
     {
-        /* $school = School::findOrFail($id);
-        return $this->sendResponse($school, "school details");  */
+        $school = School::where('slug', $slug)->first();
+        if(!$school) return response()->json(['message' => 'School not found']);
+        return $this->sendResponse($school, "school details");  
     }
 
      /**
@@ -168,7 +170,7 @@ class SchoolController extends BaseController
      *     )
      * )
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
         Validator::make(
             $request->all(),
@@ -180,8 +182,8 @@ class SchoolController extends BaseController
             ]
         )->validate();
 
-        $school = School::findOrFail($id);
-        if(!$school) return ;
+        $school = School::where('slug', $slug)->first();
+        if(!$school) return response()->json(['message' => 'School not found']);
 
         $school->update(['name' => $name,'devise_fr' => $request->devise_fr,'devise_en' => $request->devise_en,
         "immatriculation" => $request->immatriculation,"description" => $request->description, "slug" => Str::slug($request->name).'-'.uniqid() ]);
@@ -214,11 +216,12 @@ class SchoolController extends BaseController
      *     )
      * )
      */
-    public function destroy($id)
+    public function destroy($slug)
     {
-        $school = School::findOrFail($id);
-        if(!$school) return;
+        $school = School::where('slug', $slug)->first();
+        if(!$school) return response()->json(['message' => 'School not found']);
         $school->delete();
+        
         return $this->sendResponse($school, "school updated succefully");
     }
 

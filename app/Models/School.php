@@ -12,6 +12,7 @@ class School extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'slug',
         'immatriculation',
         'description',
         'devise_fr',

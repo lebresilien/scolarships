@@ -22,9 +22,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 $api->version('v1', function ($api) {
     $api->group(['prefix' => 'v1','namespace' => 'App\Http\Controllers\API\V1'], function($route){
         $route->get('schools/users', 'SchoolController@userSchool');
-        $route->get('schools/{id}', 'SchoolController@show');
+        $route->get('schools/{slug}', 'SchoolController@show');
+        $route->put('schools/{slug}', 'SchoolController@update');
         $route->post('schools', 'SchoolController@store');
-        $route->delete('schools/{id}', 'SchoolController@destroy');
+        $route->delete('schools/{slug}', 'SchoolController@destroy');
         $route->get('schools/tests', 'SchoolController@tests');
     });
 });
@@ -39,8 +40,8 @@ $api->version('v1', function ($api) {
 });
 
 $api->version('v1', function ($api) {
-    $api->group(['prefix' => 'v1/auth','namespace' => 'App\Http\Controllers\API\V1\Password'], function($route){
-        $route->post('password/email', 'ForgotPasswordController@forgot');
-        $route->post('password/reset', 'ForgotPasswordController@reset');
+    $api->group(['prefix' => 'v1/password','namespace' => 'App\Http\Controllers\API\V1\Password'], function($route){
+        $route->post('email', 'ForgotPasswordController@forgot');
+        $route->post('reset', 'ForgotPasswordController@reset')->name('password.reset');
     });
 });

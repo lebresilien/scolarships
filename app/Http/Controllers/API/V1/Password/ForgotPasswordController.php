@@ -2,26 +2,28 @@
 
 namespace App\Http\Controllers\API\V1\Password;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Controllers\API\BaseController;
 use Illuminate\Support\Facades\Password;
+use App\Http\Requests\ResetPasswordRequest;
 use App\ApiCode;
+use App\Models\User;
 
-class ForgotPasswordController extends Controller
+class ForgotPasswordController extends BaseController
 {
     public function forgot() 
     {
         $credentials = request()->validate(['email' => 'required|email']);
 
-        Password::sendResetLink($credentials);
+        $user = User::where('email', $credentials['email'])->first();
+        if(!$user) return $this->respondWithMessage('User not found');
 
+        Password::sendResetLink($credentials);
         return $this->respondWithMessage('Reset password link sent on your email id.');
     }
 
 
-    public function reset(Request $request) {
-
-
+    public function reset(ResetPasswordRequest $request) 
+    {
         $reset_password_status = Password::reset($request->validated(), function ($user, $password) {
             $user->password = $password;
             $user->save();
