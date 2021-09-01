@@ -5,19 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Academy extends Model
+class UserClasse extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'school_id',
-        'name',
-        'slug',
-        'status'
+        'classe_id'
     ];
-
-    public function school()
-    {
-        return $this->belongsTo(School::class);
-    }
 }

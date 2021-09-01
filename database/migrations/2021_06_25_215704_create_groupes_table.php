@@ -19,6 +19,7 @@ class CreateGroupesTable extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
+            $table->double('fees', 8 , 2);
             $table->boolean('status')->default(true);
             $table->timestamps();
         });

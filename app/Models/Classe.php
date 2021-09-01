@@ -13,6 +13,7 @@ class Classe extends Model
         'block_id',
         'groupe_id',
         'name',
+        'slug',
         'description',
         'status'
     ];
@@ -30,6 +31,11 @@ class Classe extends Model
     public function students()
     {
         return $this->belongsToMany(Student::class);
+    }
+
+    public function teachers()
+    {
+        return $this->belongsToMany(Teacher::class);
     }
 
 }

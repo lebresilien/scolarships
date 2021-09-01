@@ -81,7 +81,7 @@ class SchoolController extends BaseController
 
     /**
      * @OA\get(
-     *     path="/api/v1/school/{id}",
+     *     path="/api/v1/schools/{id}",
      *     tags={"School"},
      *     summary="Details school",
      *     description="Show details school",
@@ -106,7 +106,7 @@ class SchoolController extends BaseController
      */
     public function show($slug)
     {
-        $school = School::where('slug', $slug)->first();
+        $school = School::where('slug', $slug)->with('academies')->first();
         if(!$school) return response()->json(['message' => 'School not found']);
         return $this->sendResponse($school, "school details");  
     }
@@ -172,6 +172,11 @@ class SchoolController extends BaseController
      */
     public function update(Request $request, $slug)
     {
+        $school = School::where('slug', $slug)->first();
+        if(!$school) return response()->json(['message' => 'School not found']);
+
+        $this->authorize('update', $school);
+
         Validator::make(
             $request->all(),
             [
@@ -182,10 +187,8 @@ class SchoolController extends BaseController
             ]
         )->validate();
 
-        $school = School::where('slug', $slug)->first();
-        if(!$school) return response()->json(['message' => 'School not found']);
 
-        $school->update(['name' => $name,'devise_fr' => $request->devise_fr,'devise_en' => $request->devise_en,
+        $school->update(['name' => $request->name,'devise_fr' => $request->devise_fr,'devise_en' => $request->devise_en,
         "immatriculation" => $request->immatriculation,"description" => $request->description, "slug" => Str::slug($request->name).'-'.uniqid() ]);
 
         return $this->sendResponse($school, "school updated succefully");
@@ -220,9 +223,10 @@ class SchoolController extends BaseController
     {
         $school = School::where('slug', $slug)->first();
         if(!$school) return response()->json(['message' => 'School not found']);
+        $this->authorize('update', $school);
         $school->delete();
         
-        return $this->sendResponse($school, "school updated succefully");
+        return $this->sendResponse($school, "school deleted succefully");
     }
 
      /**
@@ -255,6 +259,7 @@ class SchoolController extends BaseController
 
     public function tests()
     {
+        return 'hek';
         $data = [22,13];
         $faker = \Faker\Factory::create();
         return $this->sendResponse($data, 'helloworld');

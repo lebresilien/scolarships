@@ -17,7 +17,7 @@
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
         "marcin-orlowski/laravel-api-response-builder": "^9.3",
-        "spatie/laravel-permission": "^4.2"
+        "spatie/laravel-permission": "^4.3"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
