@@ -25,7 +25,7 @@ class School extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function academys()
+    public function academies()
     {
         return $this->hasMany(Academy::class);
     }

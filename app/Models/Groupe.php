@@ -11,15 +11,17 @@ class Groupe extends Model
 
     public $timestamps = false;
     protected $fillable = [
-        'section_id',
+        'school_id',
         'name',
+        'slug',
         'description',
+        'fees',
         'status'
     ];
 
-    public function section()
+    public function school()
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsTo(School::class);
     }
 
     public function classes()

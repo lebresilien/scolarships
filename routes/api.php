@@ -21,12 +21,32 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 $api->version('v1', function ($api) {
     $api->group(['prefix' => 'v1','namespace' => 'App\Http\Controllers\API\V1'], function($route){
+
         $route->get('schools/users', 'SchoolController@userSchool');
         $route->get('schools/{slug}', 'SchoolController@show');
         $route->put('schools/{slug}', 'SchoolController@update');
         $route->post('schools', 'SchoolController@store');
         $route->delete('schools/{slug}', 'SchoolController@destroy');
         $route->get('schools/tests', 'SchoolController@tests');
+
+        $route->get('blocks/{slug}', 'BlockController@show');
+        $route->put('blocks/{id}', 'BlockController@update');
+        $route->post('blocks', 'BlockController@store');
+        $route->delete('blocks/{id}', 'BlockController@destroy');
+
+        $route->get('sections/{slug}', 'SectionController@show');
+        $route->put('sections/{id}', 'SectionController@update');
+        $route->post('sections', 'SectionController@store');
+        $route->delete('sections/{id}', 'SectionController@destroy');
+
+        $route->get('classes/{slug}', 'ClassController@show');
+        $route->put('classes/{id}', 'ClassController@update');
+        $route->post('classes', 'ClassController@store');
+        $route->delete('classes/{id}', 'ClassController@destroy');
+
+        $route->post('invite', 'InvitationController@store');
+        $route->get('registration/{token}/{role_id}/{classe_id?}', 'InvitationController@registration')
+            ->name('registration')->middleware('signed');;
     });
 });
 

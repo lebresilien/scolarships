@@ -12,6 +12,7 @@ class Block extends Model
     protected $fillable = [
         'school_id',
         'name',
+        'slug',
         'description',
         'status'
     ];
