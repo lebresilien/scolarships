@@ -26,6 +26,10 @@ class Academy extends Model
         return $this->hasMany(Inscription::class);
     }
 
+    public function sequences() {
+        return $this->hasMany(Sequence::class);
+    }
+
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];

@@ -5,30 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Inscription extends Model
+class Note extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'academy_id',
+        'sequence_id',
+        'classroom_id',
         'student_id',
-        'classroom_id'
+        'course_id',
+        'value',
+        'status'
     ];
-
-    public function transactions() {
-        return $this->hasMany(Transaction::class);
-    }
-
-    public function academy() {
-        return $this->belongsTo(Academy::class);
-    }
-
-    public function extensions() {
-        return $this->hasMany(Extension::class);
-    }
 
     public function student() {
         return $this->belongsTo(Student::class);
+    }
+
+    public function sequence() {
+        return $this->belongsTo(Sequence::class);
     }
 
     public function classroom() {

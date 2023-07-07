@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 
 class BuildingController extends Controller
 {
+    use ApiResponser;
     /**
      * Display a listing of the resource.
      *
@@ -52,9 +53,27 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($slug)
     {
-        //
+        $building = $this->verify($slug);
+
+        if(!$building)  return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Batiment non trouvé"
+            ]
+        ], 400);
+
+        $collection = collect([]);
+
+        foreach($building->classrooms as $classroom) {
+            $collection->push([
+                'name' => $classroom->name,
+                'description' => $classroom->description
+            ]);
+        }
+
+        return $this->success($collection);
     }
 
     /**
@@ -64,9 +83,28 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        //
+        $building = $this->verify($slug);
+
+        if(!$building)  return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Batiment non trouvé"
+            ]
+        ], 400);
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:buildings,name,'.$building->id]
+        ]);
+        
+        $input = $request->all();
+       
+        $input['slug'] = $building->slug;
+
+        $building->update($input);
+
+        return $this->success($building);
     }
 
     /**
@@ -78,5 +116,13 @@ class BuildingController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    private function verify($slug) {
+
+        $building = Building::where('slug', $slug)->first();
+
+        return $building;
+
     }
 }

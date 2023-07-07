@@ -54,6 +54,7 @@ class CourseController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'unit_id' => ['required', 'exists:units,id'],
             "selectedCheckbox"    => "required|array|min:1",
             "selectedCheckbox.*"  => "required|numeric|distinct",
         ]);
@@ -62,16 +63,20 @@ class CourseController extends Controller
 
         try {
 
-            $founderCourse = Course::where('name', $request->name)->first();
+            $founderCourse = Course::where('name', $request->name)
+                                    ->where('unit_id', $request->unit_id)
+                                    ->first();
+            //$account_courses = $request->user()->accounts[0]->units->courses;
 
             if(!$founderCourse) {
 
                 $course = Course::create([
                     'name' => $request->name,
+                    'unit_id' => $request->unit_id,
                     'slug' => Str::slug($request->name, '-'),
                     'description' => $request->description,
                 ]);
-
+                
                 foreach($request->selectedCheckbox as $id) {
 
                     $group = Group::find($id);
@@ -91,6 +96,12 @@ class CourseController extends Controller
             }
             else {
 
+                /* return response()->json([
+                    "errors" => [
+                        "message" => "Ce cours existe deja."
+                    ]
+                ], 422); */
+                
                 foreach($request->selectedCheckbox as $id) {
 
                     $founderGroup = Group::find($id);
@@ -109,9 +120,9 @@ class CourseController extends Controller
                             ]
                         ], 422);
 
-                        $course->groups()->attach($id);
+                        $founderCourse->groups()->attach($id);
 
-                    }
+                    } 
 
                 }
 
@@ -122,7 +133,7 @@ class CourseController extends Controller
         }catch(\Exception $e) {
             DB::rollback();
             return $e->getMessage();
-        }
+        } 
 
         return response()->noContent();
     }
@@ -158,6 +169,7 @@ class CourseController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'unit_id' => ['required', 'exists:units,id'],
             "selectedCheckbox"    => "required|array|min:1",
             "selectedCheckbox.*"  => "required|numeric|distinct",
         ]);
@@ -188,7 +200,7 @@ class CourseController extends Controller
 
         }
 
-        $course->update(["name" => $request->name]);
+        $course->update(["name" => $request->name, "unit_id" => $request->unit_id]);
 
         return response()->noContent();
     }

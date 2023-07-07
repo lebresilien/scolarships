@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Models\Role;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -37,8 +38,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
         'email_verified_at',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'roles'
     ];
+
+    protected $appends = ['rules'];
 
     /**
      * The attributes that should be cast.
@@ -57,8 +61,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Invitation::class);
     }
 
-    /* public function role() {
-        $roles = $this->getRoleNames();
-        return $roles[0];
-    } */
+    public function extensions() {
+        return $this->hasMany(Extension::class);
+    }
+
+    public function roles() {
+        return $this->belongsToMany(Role::class, 'model_has_roles', 'model_id', 'role_id');
+    }
+
+    public function getRulesAttribute() {
+        return $this->roles->pluck('name');
+    }
 }

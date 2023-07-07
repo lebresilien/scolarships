@@ -299,8 +299,94 @@ class StudentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($slug)
     {
-        //
+        $student = Student::where('slug', $slug)->first();
+
+        if(!$student) return response()->json([
+            "errors" => [
+                "message" => "Une erreur innattendue est survenue."
+            ]
+        ], 422);
+
+        $student->delete();
+
+        return response()->noContent();
+    }
+
+    //student all transactions  and extensions
+    public function details(Request $request, $slug) {
+
+        //current year transactions
+        if(!$this->service->currentAcademy($request)) {
+            $foundCurrentYearTransactions = null;
+            $foundCurrentYearExtensions = null;
+        }else {
+
+            $foundStudent = Student::where('slug', $slug)->first();
+            if(!$foundStudent) return response()->json([
+                "errors" => [
+                    "message" => "Une erreur innattendue est survenue."
+                ]
+            ], 422);
+
+            //current year transactions
+            $foundCurrentYearTransactions = Inscription::where([
+                ['academy_id', $this->service->currentAcademy($request)->id],
+                ['student_id', $foundStudent->id]
+            ])->with('transactions')->first();
+            if($foundCurrentYearTransactions) $foundCurrentYearTransactions = $foundCurrentYearTransactions['transactions'];
+
+            //others years transactions
+            $foundOtherYearTransactions = Inscription::where([
+                ['academy_id', '<>', $this->service->currentAcademy($request)->id],
+                ['student_id', $foundStudent->id]
+            ])->with('transactions')->first();
+            if($foundOtherYearTransactions) $foundOtherYearTransactions = $foundOtherYearTransactions['transactions'];
+
+            //current year extensions
+            $foundCurrentYearExtensions = Inscription::where([
+                ['academy_id', $this->service->currentAcademy($request)->id],
+                ['student_id', $foundStudent->id]
+            ])->with('extensions')->first();
+            if($foundCurrentYearExtensions) $foundCurrentYearExtensions = $foundCurrentYearExtensions['extensions'];
+
+             //others years extensions
+             $foundOtherYearExtensions = Inscription::where([
+                ['academy_id', '<>', $this->service->currentAcademy($request)->id],
+                ['student_id', $foundStudent->id]
+            ])->with('extensions')->first();
+            if($foundOtherYearExtensions) $foundOtherYearExtensions = $foundOtherYearExtensions['extensions'];
+
+            return response()->json([
+                "current_year_extensions" => $foundCurrentYearExtensions,
+                "other_year_extensions" => $foundOtherYearExtensions,
+                "current_year_transactions" => $foundCurrentYearTransactions,
+                "other_year_transactions" => $foundOtherYearTransactions,
+            ]);
+        }
+    }
+
+    public function fees(Request $request, $classroom_id, $amount) {
+
+        //check if active academy year exists
+        $currentAcademy = $this->service->currentAcademy($request);
+        if(!$currentAcademy) return response()->json([
+            "errors" => [
+                "message" => "Aucune année academique active."
+            ]
+        ], 422);
+
+        return $data = Inscription::where('academy_id', $currentAcademy->id)->get()
+               ->map(function($item) {
+                    return Transaction::where('inscription_id', $item->id)
+                            ->join('inscriptions', 'inscriptions.id', '=', 'transactions.inscription_id')
+                            ->join('students', 'students.id', '=', 'inscriptions.student_id')
+                            ->selectRaw('students.matricule, students.lname, students.fname, sum(amount) as total_amount')
+                            ->where('total_amount', '<=', $amount)
+                            ->groupBy('transactions.inscription_id')
+                            ->get()[0];         
+               });
+        
     }
 }

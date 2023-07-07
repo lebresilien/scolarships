@@ -15,6 +15,13 @@ use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\AcademyController;
 use App\Http\Controllers\Api\V1\StudentController;
 use App\Http\Controllers\Api\V1\TransactionController;
+use App\Http\Controllers\Api\V1\ExtensionController;
+use App\Http\Controllers\Api\V1\UnitController;
+use App\Http\Controllers\Api\V1\SequenceController;
+use App\Http\Controllers\Api\V1\NoteController;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Auth\AuthController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -30,6 +37,11 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
     return $request->user();
 });
 
+Route::post('/signin', [AuthController::class, 'login']);
+Route::post('/log-out', [AuthController::class, 'logout'])
+                ->middleware('auth')
+                ->name('log-out');
+
 Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($route) {
 
     $route->post('invitation', InvitationController::class);
@@ -40,16 +52,24 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
 
     $route->post('groups', [GroupController::class, 'store']);
     $route->get('groups', [GroupController::class, 'index']);
+    $route->get('groups_classrooms', [GroupController::class, 'groups_classrooms']);
+    $route->get('groups/{slug}', [GroupController::class, 'show']);
+    $route->put('groups/{slug}', [GroupController::class, 'update']);
 
     $route->post('buildings', [BuildingController::class, 'store']);
     $route->get('buildings', [BuildingController::class, 'index']);
+    $route->get('buildings/{slug}', [BuildingController::class, 'show']);
+    $route->put('buildings/{slug}', [BuildingController::class, 'update']);
 
     $route->post('classrooms', [ClassroomController::class, 'store']);
+    $route->get('classrooms/{slug}', [ClassroomController::class, 'show']);
     $route->get('classrooms', [ClassroomController::class, 'index']);
-
+    $route->get('classrooms/{slug}/courses/{course_slug}/sequences/{sequence_slug}/students', [ClassroomController::class, 'students']);
+    $route->get('classrooms/{slug}/courses', [ClassroomController::class, 'courses']);
+    $route->put('classrooms/{id}', [ClassroomController::class, 'update']);
+    $route->get('classrooms/{slug}/stats', [ClassroomController::class, 'stats']);
     $route->get('primary-statistics', [DashboardController::class, 'primary_statistics']);
-    $route->get('groups/classrooms', [GroupController::class, 'groups_classrooms']);
-    
+  
     $route->post('courses', [CourseController::class, 'store']);
     $route->get('courses', [CourseController::class, 'index']);
     $route->get('courses/{slug}', [CourseController::class, 'show']);
@@ -64,8 +84,39 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('students/{slug}', [StudentController::class, 'show']);
     $route->post('students', [StudentController::class, 'store']);
     $route->put('students/{slug}', [StudentController::class, 'update']);
+    $route->delete('students/{slug}', [StudentController::class, 'destroy']);
+    $route->get('students/{slug}/details', [StudentController::class, 'details']);
+    $route->get('students/{classroom_id}/{amount}/fees', [StudentController::class, 'fees']);
 
     $route->post('transactions', [TransactionController::class, 'store']);
+
+    $route->post('extensions', [ExtensionController::class, 'store']);
+    $route->delete('extensions', [ExtensionController::class, 'destroy']);
+    $route->get('extensions/download/{id}', [ExtensionController::class, 'download']);
+
+    $route->post('units', [UnitController::class, 'store']);
+    $route->get('units', [UnitController::class, 'index']);
+    $route->get('units/{id}', [UnitController::class, 'show']);
+    $route->delete('units/{id}', [UnitController::class, 'destroy']);
+
+    $route->post('sequences', [SequenceController::class, 'store']);
+    $route->get('sequences', [SequenceController::class, 'index']);
+    $route->get('sequences/{id}', [SequenceController::class, 'show']);
+    $route->get('sequences/{sequence_slug}/sections', [SequenceController::class, 'sections']);
+    $route->get('sequences/{sequence_slug}/groups/{section_slug}', [SequenceController::class, 'groups']);
+    $route->get('sequences/{sequence_slug}/classrooms/{classroom_slug}', [SequenceController::class, 'classrooms']);
+    $route->delete('sequences/{id}', [SequenceController::class, 'destroy']);
+
+    $route->post('notes', [NoteController::class, 'store']);
+
+    $route->post('signature_pad', [AccountController::class, 'signature_pad']);
+
+    $route->get('test', function(Request $request) {
+        // Carbon::now()->format('Y-m-d');
+        ///return 'fnf';
+        //$account_courses = $request->user()->accounts[0]->units;
+        return public_path('storage/signatures/').$request->user()->accounts[0]->signature_base64;
+     });
 });
 
 Route::post('v1/registration', RegistrationController::class);
@@ -75,6 +126,37 @@ Route::get('v1/accounts/{id}', [AccountController::class, 'show']);
 /* Route::group(['prefix' => 'v1'], function($route) {
     $route->post('registration', RegistrationController::class);
 }); */
+
+Route::group(['prefix' => 'v1'], function($route) {
+    $route->get('textote', function(Request $request) {
+        App::setLocale('fr');
+        $locale = App::getLocale();
+        $ext = App\Models\Extension::find(1);
+        return $ext->created_at->format('d-m-y');
+       // Carbon::now()->format('Y-m-d');
+       //return $account_courses = $request->user()->accounts[0]->units->courses;
+    });
+});
+
+Route::get('v1/hello', function() {
+
+   /*  $username = 'dcf5f9f7-eb61-40be-ab3c-557f6b51cbd4';
+	$password = '4accc57e7c434f9f823c8644b5a2c03b';
+	
+	$auth = $username . ':' . $password;
+	$credentials = base64_encode($auth);
+	
+	echo $credentials; */
+    //Storage::makeDirectory('public/test');
+
+    $collection = collect(['taylor', 'abigail', null])->map(function ($name) {
+        return strtoupper($name);
+    })->reject(function ($name) {
+        return empty($name);
+    });
+
+    return $collection;
+});
 
 
  

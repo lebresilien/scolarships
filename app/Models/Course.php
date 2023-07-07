@@ -13,13 +13,20 @@ class Course extends Model
         'name',
         'slug',
         'description',
+        'unit_id'
     ];
 
     public function groups() {
         return $this->belongsToMany(Group::class, 'group_course');
     }
 
+    public function unit() {
+        return $this->belongsTo(Unit::class);
+    }
+
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];
+
+    protected $with = ['unit'];
 }

@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Classroom;
+use App\Models\Note;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,5 +19,19 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return ['Laravel' => app()->version()];
 });
+
+Route::get('/test', function () {
+    $classroom = Classroom::find(2);
+    
+    $data =  $classroom->notes->groupBy('student_id');
+    return $data->map(function($item) {
+        return $item->sum('value');
+    });
+    return $data->all();
+    $data = Note::select(DB::raw('sum(value) as total'))->groupBy('student_id')->get();
+ return ($data);
+  
+});
+
 
 require __DIR__.'/auth.php';

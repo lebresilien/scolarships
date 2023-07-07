@@ -21,25 +21,22 @@ class InvitationController extends Controller
     {
         $request->validate([
             'email' => ['required', 'string', 'email', 'max:255', 'unique:invitations'],
-            'selectedRoleValue' => ['required', 'string', 'max:255'],
-            'selectedClassroomValue' => ['nullable', 'exists:classrooms,id']
+            'role_id' => ['required', 'exists:roles,id'],
+            'classroom_id' => ['nullable', 'exists:classrooms,id']
         ]);
 
         $invitation = new Invitation($request->all());
         $invitation->generateInvitationToken();
         $invitation->user_id =  $request->user()->id;
 
-        $role_name = $request->selectedRoleValue == "Utilisateur" ? "user" : 'teacher';
-        $role = Role::where('name', $role_name)->first();
-        $invitation->role_id = $role->id;
-
-        if(!empty($request->classroom_id)) $invitation->classroom_id = $request->classroom_id;
+       // if(!empty($request->classroom_id)) $invitation->classroom_id = $request->classroom_id;
         
         $invitation->save();
 
         $url = config('app.frontend_url').'/registration?token='.$invitation->invitation_token;
 
         Mail::to($request->get('email'))->send(new InvitationMail($invitation, $url));
+        
         return response()->noContent();
     }
 }

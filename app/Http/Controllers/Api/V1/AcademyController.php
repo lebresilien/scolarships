@@ -20,7 +20,7 @@ class AcademyController extends Controller
     {
   
         $academies = Academy::where("account_id", $request->user()->accounts[0]->id)
-                     ->get();
+                     ->orderBy('id', 'DESC')->get();
        
         return response()->json($academies);
     }

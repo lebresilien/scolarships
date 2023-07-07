@@ -49,8 +49,9 @@ class GroupController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:sections'],
+            'name' => ['required', 'string', 'max:255', 'unique:groups'],
             'fees' => ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
+            'section_id' => ['required', 'exists:sections,id']
         ]);
 
         $group = Group::create([
@@ -61,7 +62,6 @@ class GroupController extends Controller
             'fees' => $request->fees
         ]);
 
-        //return $this->success($section);
         return response()->noContent();
     }
 
@@ -71,9 +71,28 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($slug)
     {
-        //
+        $group = $this->verify($slug);
+
+        if(!$group) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Groupe non trouvé"
+            ]
+        ], 400);
+
+        $collection = collect([]);
+        
+        foreach($group->classrooms as $classroom) {
+            $collection->push([
+                "value" => $classroom->id, 
+                "label" => $classroom->name,
+                "slug" => $classroom->slug
+            ]);
+        } 
+        
+        return response()->json($collection);
     }
 
     /**
@@ -83,9 +102,30 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        //
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:groups,name,'.$slug],
+            'fees' => ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
+            'section_id' => ['required', 'exists:sections,id']
+        ]);
+        
+        $group = $this->verify($slug);
+
+        if(!$group) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Groupe non trouvé"
+            ]
+        ], 400);
+
+        $input = $request->all();
+
+        $input['slug'] = $group->slug;
+
+        $group->update($input);
+
+        return $this->success($group);
     }
 
     /**
@@ -113,6 +153,19 @@ class GroupController extends Controller
             }
         }
 
-        return response()->json($data);
+        $units = $request->user()->accounts[0]->units;
+
+        return response()->json([
+            'classrooms' => $data,
+            'units' => $units
+        ]);
+    }
+
+    private function verify($slug) {
+
+        $group = Group::where("slug", $slug)->first();
+
+        return $group;
+
     }
 }

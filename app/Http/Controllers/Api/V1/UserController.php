@@ -94,4 +94,8 @@ class UserController extends Controller
     {
         //
     }
+
+    public function signature_pad(Request $request) {
+        return $request;
+    }
 }

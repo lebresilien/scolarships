@@ -35,4 +35,9 @@ class Account extends Model
     {
         return $this->hasMany(Academy::class);
     }
+
+    public function units() {
+        return $this->hasMany(unit::class);
+    }
+
 }

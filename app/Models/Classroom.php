@@ -18,6 +18,12 @@ class Classroom extends Model
         'status',
     ];
 
+    protected $appends = ['building_name', 'group_name'];
+
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d',
+    ];
+
     public function building() {
         return $this->belongsTo(Building::class);
     } 
@@ -27,6 +33,18 @@ class Classroom extends Model
     } 
 
     public function students() {
-        return $this->belongsToMany(Student::class, 'inscriptions');
+        return $this->belongsToMany(Student::class, 'inscriptions')->withPivot('status', 'academy_id');
+    }
+
+    public function getBuildingNameAttribute() {
+        return $this->building->name;
+    }
+
+    public function getGroupNameAttribute() {
+        return $this->group->name;
+    }
+
+    public function notes() {
+        return $this->hasMany(Note::class);
     }
 }

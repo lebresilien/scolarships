@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{ User, Account };
 use App\Traits\ApiResponser;
+use Illuminate\Support\Facades\Storage;
 
 class AccountController extends Controller
 {
@@ -72,5 +73,32 @@ class AccountController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function signature_pad(Request $request) {
+        
+        $folderPath = "public/signatures/";
+
+        if (!Storage::exists($folderPath)) {
+            Storage::makeDirectory('/public/signatures', 0777, true, true);
+        }
+  
+        $img = $request->signature_base64;
+
+        $image_parts = explode(";base64,", $img);
+        $image_type_aux = explode("image/", $image_parts[0]);
+        $image_type = $image_type_aux[1];
+       
+        $image_base64 = base64_decode($image_parts[1]);
+        $file_name = uniqid() . '.'.$image_type;
+        $file = $folderPath . $file_name;
+
+        $account = Account::findOrFail($request->user()->accounts[0]->id);
+        $account->signature_base64 = $file_name;
+        $account->save();
+
+        Storage::put($file, $image_base64);
+
+        return response()->noContent();
     }
 }
