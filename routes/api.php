@@ -38,8 +38,8 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
 });
 
 Route::post('/signin', [AuthController::class, 'login']);
-Route::post('/log-out', [AuthController::class, 'logout'])
-                ->middleware('auth')
+Route::post('/logout', [AuthController::class, 'logout'])
+                ->middleware('auth:sanctum')
                 ->name('log-out');
 
 Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($route) {
@@ -62,7 +62,8 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->put('buildings/{slug}', [BuildingController::class, 'update']);
 
     $route->post('classrooms', [ClassroomController::class, 'store']);
-    $route->get('classrooms/{slug}', [ClassroomController::class, 'show']);
+    $route->get('classrooms/students', [ClassroomController::class, 'studentList']);
+    $route->get('classrooms/{slug}/{option?}', [ClassroomController::class, 'show']);
     $route->get('classrooms', [ClassroomController::class, 'index']);
     $route->get('classrooms/{slug}/courses/{course_slug}/sequences/{sequence_slug}/students', [ClassroomController::class, 'students']);
     $route->get('classrooms/{slug}/courses', [ClassroomController::class, 'courses']);

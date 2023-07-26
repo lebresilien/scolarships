@@ -60,7 +60,7 @@ class UserController extends Controller
             'password' => ['nullable', Rules\Password::defaults()],
         ]);
         
-        { !$request->has('password') ?
+        { $request->has('password') ?
 
            
 

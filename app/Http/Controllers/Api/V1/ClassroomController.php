@@ -66,11 +66,15 @@ class ClassroomController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $slug)
+    public function show(Request $request, $slug, $option = null)
     {
-    
-        $classroom = $this->verify($slug);
-
+       
+        { !$option ?
+            $classroom = $this->verify($slug)
+            :
+            $classroom = $request->user()->classroom;
+        }  
+        
         $students = $classroom->students->where('pivot.academy_id', $this->service->currentAcademy($request)->id)->where('pivot.status', 1);
         
         $avg = $students->map(function($item, $key) {
@@ -83,7 +87,7 @@ class ClassroomController extends Controller
             "count_girl" => count($students->where('sexe', 'F')),
             "min_age" => Carbon::parse($students->min('born_at'))->age,
             "max_age" => Carbon::parse($students->max('born_at'))->age,
-            "average_age" => $avg->avg()
+            "average_age" => number_format($avg->avg(), 2)
         ]);
     }
 
@@ -191,5 +195,43 @@ class ClassroomController extends Controller
 
         return $classroom;
 
+    }
+
+    public function studentList(Request $request) {
+
+        if($request->user()->hasRole('Enseignant')) {
+            
+            $classroom = $request->user()->classroom;
+            
+            $students = $classroom->students->where('pivot.academy_id', $this->service->currentAcademy($request)->id)->where('pivot.status', 1);
+            
+            $data = $students->map(function($student) {
+                return [
+                    'id' => $student->id,
+                    'name' => $student->fname,
+                    'surname' => $student->lname,
+                    'matricule' => $student->matricule,
+                    'sexe' => $student->sexe,
+                    'born_at' => $student->born_at,
+                    'father_name' => $student->father_ame,
+                    'mother_name' => $student->mother_name,
+                    'fphone' => $student->fphone,
+                    'mphone' => $student->mphone,
+                    'quarter' => $student->quarter,
+                    'born_place' => $student->born_place,
+                    'allergy' => $student->allergy,
+                ];
+            });
+
+            return $data->paginate(10);
+
+        } else {
+            return response()->json([
+                "message" =>  "Error.",
+                "errors" => [
+                    "message" => "Vous n'avez pas les permissions requises"
+                ]
+            ], 400);
+        }
     }
 }

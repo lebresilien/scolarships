@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class InvitationController extends Controller
 {
@@ -21,13 +22,16 @@ class InvitationController extends Controller
     {
         $request->validate([
             'email' => ['required', 'string', 'email', 'max:255', 'unique:invitations'],
-            'role_id' => ['required', 'exists:roles,id'],
+            'selectedRoleValue' => ['required'],
             'classroom_id' => ['nullable', 'exists:classrooms,id']
         ]);
 
-        $invitation = new Invitation($request->all());
+        $role = DB::table('roles')->where('name', $request->selectedRoleValue)->first();
+       
+        $invitation = new Invitation($request->except('selectedRoleValue'));
         $invitation->generateInvitationToken();
-        $invitation->user_id =  $request->user()->id;
+        $invitation->user_id = $request->user()->id;
+        $invitation->role_id = $role->id;
 
        // if(!empty($request->classroom_id)) $invitation->classroom_id = $request->classroom_id;
         

@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\Classroom;
 use App\Models\Note;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +23,9 @@ Route::get('/', function () {
 });
 
 Route::get('/test', function () {
-    $classroom = Classroom::find(2);
+
+    User::find(1)->update(['password' => Hash::make('12345678')]);
+   /*  $classroom = Classroom::find(2);
     
     $data =  $classroom->notes->groupBy('student_id');
     return $data->map(function($item) {
@@ -29,7 +33,7 @@ Route::get('/test', function () {
     });
     return $data->all();
     $data = Note::select(DB::raw('sum(value) as total'))->groupBy('student_id')->get();
- return ($data);
+ return ($data); */
   
 });
 

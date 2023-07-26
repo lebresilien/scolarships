@@ -12,6 +12,7 @@ class Classroom extends Model
     protected $fillable = [
         'building_id',
         'group_id',
+        'user_id',
         'name',
         'slug',
         'description',
@@ -46,5 +47,9 @@ class Classroom extends Model
 
     public function notes() {
         return $this->hasMany(Note::class);
+    }
+
+    public function user() {
+        return $this->belongTo(User::class);
     }
 }

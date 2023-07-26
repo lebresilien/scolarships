@@ -9,7 +9,7 @@ use App\Traits\ApiResponser;
 use App\Models\Invitation;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\{ User, Account };
+use App\Models\{ User, Account, Classroom };
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +30,7 @@ class RegistrationController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'surname' => ['nullable', 'string', 'max:255'],
             'token' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'regex:/^([0-9\s\-\+\(\)]*)$/|min:9'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -47,6 +48,7 @@ class RegistrationController extends Controller
 
             $user = User::create([
                 'name' => $request->name,
+                'phone' => $request->phone,
                 'surname' => $request->surname,
                 'email' => $invitation->email,
                 'password' => Hash::make($request->password),
@@ -59,8 +61,11 @@ class RegistrationController extends Controller
             $host_user = User::findOrFail($invitation->user_id);
             $user->accounts()->attach($host_user->accounts[0]->id); 
 
-            if($invitation->classe_id) {
-
+            if($invitation->classroom_id) {
+                //return $invitation;
+                $classroom = Classroom::find($invitation->classroom_id);
+                //return $classroom;
+                $classroom->update(['user_id' => $user->id]);
             }
 
             $invitation->delete();
