@@ -10,7 +10,7 @@ class Unit extends Model
     use HasFactory;
 
     protected $fillable = [
-        'account_id',
+        'group_id',
         'name',
         'slug',
         'description',
@@ -19,8 +19,12 @@ class Unit extends Model
 
     //protected $with = ['courses'];
 
-    public function account() {
-        return $this->belongsTo(Account::class);
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d',
+    ];
+
+    public function group() {
+        return $this->belongsTo(Group::class);
     }
 
     public function courses() {

@@ -6,11 +6,23 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
-use App\Models\{ Course, Group, GroupCourse };
 use Illuminate\Support\Facades\DB;
+use App\Repositories\CourseRepository;
+use App\Repositories\UnitRepository;
+use App\Repositories\GroupRepository;
 
 class CourseController extends Controller
 {
+    /** @var  CourseRepository */
+    private $courseRepository;
+    private $unitRepository;
+
+    public function __construct(CourseRepository $courseRepository, UnitRepository $unitRepository, GroupRepository $groupRepository) {
+        $this->courseRepository = $courseRepository;
+        $this->unitRepository = $unitRepository;
+        $this->groupRepository = $groupRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -18,30 +30,40 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        $data = array();
-        $sections = $request->user()->accounts[0]->sections;
+        $courses = $this->courseRepository->list($request);
+        
+        $units = $this->unitRepository->list($request);
 
-        foreach($sections as $section) {
+        $collection = collect([]);
+        $unit_collection = collect([]);
 
-            if($section->groups) {
-
-                foreach($section->groups as $group) {
-
-                    if($group->courses) {
-
-                        foreach($group->courses as $course)
-                        {  
-                            array_push($data, $course);
-                        }
-                    }
-                    
-                }
-            }
-            
+        foreach($units as $unit) {
+            $unit_collection->push([
+                'value' => $unit['id'],
+                'label' => $unit['name']
+            ]);
         }
 
-        $collection = collect($data)->unique('name');
-        return $collection->values()->all();
+        foreach($courses as $course) {
+            $collection->push([
+                'id' => $course->id,
+                'name' => $course->name,
+                'slug' => $course->slug,
+                'coeff' => $course->coeff,
+                'description' => $course->description,
+                'created_at' => $course->created_at->format('Y-m-d'),
+                'group' => [
+                    'value' => $course->unit->id,
+                    'label' => $course->unit->name,
+                ],
+            ]);
+        }
+
+        return [
+            'state' => $collection,
+            'additional' => $unit_collection
+        ];
+
     }
 
     /**
@@ -55,56 +77,49 @@ class CourseController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'unit_id' => ['required', 'exists:units,id'],
-            "selectedCheckbox"    => "required|array|min:1",
-            "selectedCheckbox.*"  => "required|numeric|distinct",
+            'coeff' => ['required', 'numeric'],
         ]);
 
-        DB::beginTransaction();
+       /*  DB::beginTransaction();
 
-        try {
+        try { */
 
-            $founderCourse = Course::where('name', $request->name)
-                                    ->where('unit_id', $request->unit_id)
-                                    ->first();
-            //$account_courses = $request->user()->accounts[0]->units->courses;
+            $founderCourse = $this->courseRepository->all([
+                'name' => $request->name,
+                'unit_id' => $request->unit_id
+            ])->first();
 
-            if(!$founderCourse) {
+            if($founderCourse)  return response()->json([
+                "errors" => [
+                    "message" => "Ce cours existe deja."
+                ]
+            ], 422);
 
-                $course = Course::create([
-                    'name' => $request->name,
-                    'unit_id' => $request->unit_id,
-                    'slug' => Str::slug($request->name, '-'),
-                    'description' => $request->description,
-                ]);
+            $input = $request->all();
+            $input['slug'] = Str::slug($request->name, '-');
+
+            $this->courseRepository->create($input);
                 
-                foreach($request->selectedCheckbox as $id) {
+            /*  foreach($request->selectedCheckbox as $id) {
 
-                    $group = Group::find($id);
+                $group = $this->groupRepository->find($id);
 
-                    if(!$group) return response()->json([
-                        "message" =>  "A group does not exit.",
-                        "errors" => [
-                            "message" => "A group does not exit"
-                        ]
-                    ], 422);
-                    
-                    $course->groups()->attach($id);
-
-                }
-                
-
-            }
-            else {
-
-                /* return response()->json([
+                if(!$group) return response()->json([
+                    "message" =>  "A group does not exit.",
                     "errors" => [
-                        "message" => "Ce cours existe deja."
+                        "message" => "A group does not exit"
                     ]
-                ], 422); */
+                ], 422);
+                
+                $course->groups()->attach($id);
+
+            } 
+            
+            else {
                 
                 foreach($request->selectedCheckbox as $id) {
 
-                    $founderGroup = Group::find($id);
+                    $founderGroup = $this->courseRepository->find($id);
 
                     if($founderGroup) {
 
@@ -133,7 +148,7 @@ class CourseController extends Controller
         }catch(\Exception $e) {
             DB::rollback();
             return $e->getMessage();
-        } 
+        } */
 
         return response()->noContent();
     }
@@ -146,7 +161,7 @@ class CourseController extends Controller
      */
     public function show($slug)
     {
-        $course = Course::where('slug', $slug)->with('groups')->first();
+        $course = $this->courseRepository->all(['slug' => $slug])->with('groups')->first();
 
         if(!$course) return response()->json([
             "message" =>"Ce cours n'existe pas.",
@@ -165,17 +180,16 @@ class CourseController extends Controller
      * @param  string  $slug
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'unit_id' => ['required', 'exists:units,id'],
-            "selectedCheckbox"    => "required|array|min:1",
-            "selectedCheckbox.*"  => "required|numeric|distinct",
+            'coeff' => ['required', 'numeric']
         ]);
 
-        $course = Course::where('slug', $slug)->first();
-
+        $course = $this->courseRepository->find($id);
+        
         if(!$course) return response()->json([
             "message" =>"Ce cours n'existe pas.",
             "errors" => [
@@ -183,24 +197,20 @@ class CourseController extends Controller
             ]
         ],422);
 
-        $course->groups()->detach();
+        $input = $request->all();
 
-        foreach($request->selectedCheckbox as $id) {
+        /* $course = $this->courseRepository->all(['name' => $input['name'], 'unit_id' => $input['unit_id']])->first();
 
-            $group = Group::find($id);
+        if(!$course) return response()->json([
+            "message" =>"Ce cours existe pas.",
+            "errors" => [
+                "message" => "un cours avec ce nom existe deja."
+            ]
+        ],422); */
 
-            if(!$group) return response()->json([
-                "message" =>  "A group does not exit.",
-                "errors" => [
-                    "message" => "A group does not exit"
-                ]
-            ], 422);
-            
-            $course->groups()->attach($id);
+        $input['slug'] = Str::slug($request->name, '-');
 
-        }
-
-        $course->update(["name" => $request->name, "unit_id" => $request->unit_id]);
+        $this->courseRepository->update($input, $id);
 
         return response()->noContent();
     }
@@ -211,9 +221,9 @@ class CourseController extends Controller
      * @param  string  $slug
      * @return \Illuminate\Http\Response
      */
-    public function destroy($slug)
+    public function destroy($id)
     {
-        $course = Course::where('slug', $slug)->first();
+        $course = $this->courseRepository->find($id);
 
         if(!$course) return response()->json([
             "message" =>"Ce cours n'existe pas.",
@@ -221,9 +231,7 @@ class CourseController extends Controller
                 "message" => "Ce cours n'existe pas."
             ]
         ],422);
-
         
-        $course->groups()->detach();
         return response()->noContent();
 
     }

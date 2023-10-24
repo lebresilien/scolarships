@@ -18,8 +18,6 @@ class Group extends Model
         'fees'
     ];
 
-    protected $appends = ['section_name'];
-
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];
@@ -41,8 +39,8 @@ class Group extends Model
         return $this->hasManyThrough(Note::class, Classroom::class);
     }
 
-    public function getSectionNameAttribute() {
-        return $this->section->name;
+    public function units() {
+        return $this->hasMany(Unit::class);
     }
 
 }

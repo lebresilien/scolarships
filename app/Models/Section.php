@@ -18,6 +18,10 @@ class Section extends Model
         'status'
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d',
+    ];
+
     public function account() {
         return $this->belongsTo(Account::class);
     }

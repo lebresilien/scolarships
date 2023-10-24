@@ -49,44 +49,47 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     
     $route->post('sections', [SectionController::class, 'store']);
     $route->get('sections', [SectionController::class, 'index']);
+    $route->put('sections/{id}', [SectionController::class, 'update']);
 
     $route->post('groups', [GroupController::class, 'store']);
     $route->get('groups', [GroupController::class, 'index']);
     $route->get('groups_classrooms', [GroupController::class, 'groups_classrooms']);
-    $route->get('groups/{slug}', [GroupController::class, 'show']);
-    $route->put('groups/{slug}', [GroupController::class, 'update']);
+    $route->get('groups/{id}', [GroupController::class, 'show']);
+    $route->put('groups/{id}', [GroupController::class, 'update']);
+    $route->delete('groups/{ids}', [GroupController::class, 'destroy']);
 
     $route->post('buildings', [BuildingController::class, 'store']);
     $route->get('buildings', [BuildingController::class, 'index']);
-    $route->get('buildings/{slug}', [BuildingController::class, 'show']);
-    $route->put('buildings/{slug}', [BuildingController::class, 'update']);
+    $route->get('buildings/{id}', [BuildingController::class, 'show']);
+    $route->put('buildings/{id}', [BuildingController::class, 'update']);
 
     $route->post('classrooms', [ClassroomController::class, 'store']);
     $route->get('classrooms/students', [ClassroomController::class, 'studentList']);
-    $route->get('classrooms/{slug}/{option?}', [ClassroomController::class, 'show']);
+    $route->get('classrooms/{id}', [ClassroomController::class, 'show']);
     $route->get('classrooms', [ClassroomController::class, 'index']);
-    $route->get('classrooms/{slug}/courses/{course_slug}/sequences/{sequence_slug}/students', [ClassroomController::class, 'students']);
-    $route->get('classrooms/{slug}/courses', [ClassroomController::class, 'courses']);
+    $route->get('classrooms/{id}/courses/{course_slug}/sequences/{sequence_slug}/students', [ClassroomController::class, 'students']);
+    $route->get('classrooms/{id}/courses', [ClassroomController::class, 'courses']);
     $route->put('classrooms/{id}', [ClassroomController::class, 'update']);
-    $route->get('classrooms/{slug}/stats', [ClassroomController::class, 'stats']);
+    //$route->get('classrooms/{id}/stats', [ClassroomController::class, 'stats']);
     $route->get('primary-statistics', [DashboardController::class, 'primary_statistics']);
   
     $route->post('courses', [CourseController::class, 'store']);
     $route->get('courses', [CourseController::class, 'index']);
-    $route->get('courses/{slug}', [CourseController::class, 'show']);
-    $route->put('courses/{slug}', [CourseController::class, 'update']);
-    $route->delete('courses/{slug}', [CourseController::class, 'destroy']);
+    $route->get('courses/{id}', [CourseController::class, 'show']);
+    $route->put('courses/{id}', [CourseController::class, 'update']);
+    $route->delete('courses/{id}', [CourseController::class, 'destroy']);
 
     $route->post('academies', [AcademyController::class, 'store']);
     $route->get('academies', [AcademyController::class, 'index']);
     $route->put('academies/{id}', [AcademyController::class, 'update']);
+    $route->delete('academies/{slugs}', [AcademyController::class, 'destroy']);
 
     $route->get('students', [StudentController::class, 'index']);
-    $route->get('students/{slug}', [StudentController::class, 'show']);
+    $route->get('students/{id}', [StudentController::class, 'show']);
     $route->post('students', [StudentController::class, 'store']);
-    $route->put('students/{slug}', [StudentController::class, 'update']);
-    $route->delete('students/{slug}', [StudentController::class, 'destroy']);
-    $route->get('students/{slug}/details', [StudentController::class, 'details']);
+    $route->put('students/{id}', [StudentController::class, 'update']);
+    $route->delete('students/{id}', [StudentController::class, 'destroy']);
+    $route->get('students/{id}/details', [StudentController::class, 'details']);
     $route->get('students/{classroom_id}/{amount}/fees', [StudentController::class, 'fees']);
 
     $route->post('transactions', [TransactionController::class, 'store']);
@@ -98,7 +101,8 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('units', [UnitController::class, 'store']);
     $route->get('units', [UnitController::class, 'index']);
     $route->get('units/{id}', [UnitController::class, 'show']);
-    $route->delete('units/{id}', [UnitController::class, 'destroy']);
+    $route->put('units/{id}', [UnitController::class, 'update']);
+    $route->delete('units/{slugs}', [UnitController::class, 'destroy']);
 
     $route->post('sequences', [SequenceController::class, 'store']);
     $route->get('sequences', [SequenceController::class, 'index']);

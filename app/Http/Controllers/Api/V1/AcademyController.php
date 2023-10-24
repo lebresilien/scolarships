@@ -7,10 +7,16 @@ use Illuminate\Http\Request;
 use App\Models\{ Academy, Classroom };
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
-
+use App\Repositories\AcademyRepository;
 
 class AcademyController extends Controller
 {
+    /** @var AcademyRepository */
+    private $academyRepository;
+
+    public function __construct(AcademyRepository $academyRepository) {
+        $this->academyRepository = $academyRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -19,10 +25,11 @@ class AcademyController extends Controller
     public function index(Request  $request)
     {
   
-        $academies = Academy::where("account_id", $request->user()->accounts[0]->id)
-                     ->orderBy('id', 'DESC')->get();
+        $academies = $this->academyRepository->all(['account_id' => $request->$request->user()->accounts[0]->id]);
        
-        return response()->json($academies);
+        return [
+            'state' => $academies
+        ];
     }
 
     /**
@@ -38,11 +45,9 @@ class AcademyController extends Controller
             'name' => ['required', 'string', 'max:255']
         ]);
         
-        $founderAcademy = Academy::where([
-            
-            ["name", $request->name],
-            ["account_id", $request->user()->accounts[0]->id]
-
+        $founderAcademy = $this->academyRepository->all([
+            "name", $request->name,
+            "account_id", $request->user()->accounts[0]->id
         ])->first();
 
         if($founderAcademy) return response()->json([
@@ -52,11 +57,9 @@ class AcademyController extends Controller
             ]
         ], 422);
 
-        $founder_active_academy = Academy::where([
-
-           ["account_id", $request->user()->accounts[0]->id],
-           ["status", true]
-
+        $founder_active_academy = $this->academyRepository->all([
+           "account_id", $request->user()->accounts[0]->id,
+           "status", true
         ])->first();
 
         if($founder_active_academy)  return response()->json([
@@ -66,14 +69,13 @@ class AcademyController extends Controller
             ]
         ], 422);
 
-        $academy = Academy::create([
+        $this->academyRepository->create([
             "name" => $request->name,
             "slug" => Str::slug($request->name, '-'),
             "account_id" => $request->user()->accounts[0]->id
         ]);
 
         return response()->noContent();
-
 
     }
 
@@ -95,9 +97,24 @@ class AcademyController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        $academy = Academy::findOrFail($id);
+
+        $academy = $this->academyRepository->all([
+            "slug" => $request->slug,
+        ])->first();
+
+        if($academy)  return response()->json([
+            "message" =>  "Erreur.",
+            "errors" => [
+                "message" => "Aucun element trouvé."
+            ]
+        ], 422);
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:academies,name,'.$academy->id],
+        ]);
+
         $academy->status = false;
         $academy->save();
 
@@ -110,14 +127,34 @@ class AcademyController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($slugs)
     {
-        //
+       $slugs = explode(';', $slugs);
+       
+        foreach($slugs as $slug) {
+
+            $academy = $this->academyRepository->all(['slug' => $slug])->first();
+
+            if($academy->inscriptions->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $slug) {
+            $academy = $this->academyRepository->all(['slug' => $slug])->first();
+            $academy->state = false;
+            $academy->save();
+        }
+
+        return response()->noContent();
     }
 
     public function switchStatus($id) {
 
-        $academy = Academy::find($id);
+        $academy = $this->academyRepository->find($id);
         $academy->status = false;
         $academy->save();
     }

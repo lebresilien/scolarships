@@ -13,14 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('units', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('group_id')->contrained()->onDelete('cascade');
-            $table->string('name');
-            $table->string('slug');
-            $table->text('description')->nullable();
+        Schema::table('courses', function (Blueprint $table) {
             $table->boolean('status')->default(true);
-            $table->timestamps();
         });
     }
 
@@ -31,6 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('units');
+        Schema::table('courses', function (Blueprint $table) {
+            $table->dropColumn('status');
+        });
     }
 };

@@ -9,35 +9,44 @@ use Illuminate\Validation\Rules;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponser;
+use App\Repositories\GroupRepository;
+use App\Repositories\SectionRepository;
 
 class GroupController extends Controller
 {
     use ApiResponser;
+    /** @var GroupRepository */
+    private $groupRepository;
+    private $sectionRepository;
+
+    public function __construct(GroupRepository $groupRepository, SectionRepository $sectionRepository) {
+        $this->groupRepository = $groupRepository;
+        $this->sectionRepository = $sectionRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
+        $groups = $this->groupRepository->list($request);
+        $sections = $this->sectionRepository->list($request);
 
-        $data = array();
-        $sections = Auth::user()->accounts[0]->sections;
+        $unit_collection = collect([]);
 
         foreach($sections as $section) {
-
-            if($section->groups) {
-
-                foreach($section->groups as $group) {
-
-                    array_push($data, $group);
-                }
-            }
-            
+            $unit_collection->push([
+                'value' => $section['id'],
+                'label' => $section['name']
+            ]);
         }
 
-        //if(count($data) > 0) return $this->success($data[0]);
-        return $this->success($data);
+        return [
+            'state' => $groups,
+            'additional' => $unit_collection
+        ];
     }
 
     /**
@@ -54,13 +63,10 @@ class GroupController extends Controller
             'section_id' => ['required', 'exists:sections,id']
         ]);
 
-        $group = Group::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name, '-'),
-            'description' => $request->description,
-            'section_id' => $request->section_id,
-            'fees' => $request->fees
-        ]);
+        $input = $request->all();
+        $input['slug'] = Str::slug($request->name, '-');
+
+        $this->groupRepository->create($input);
 
         return response()->noContent();
     }
@@ -102,15 +108,15 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:groups,name,'.$slug],
+            'name' => ['required', 'string', 'max:255', 'unique:groups,name,'.$id],
             'fees' => ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
             'section_id' => ['required', 'exists:sections,id']
         ]);
         
-        $group = $this->verify($slug);
+        $group = $this->verify($id);
 
         if(!$group) return response()->json([
             "message" =>  "Error.",
@@ -123,9 +129,9 @@ class GroupController extends Controller
 
         $input['slug'] = $group->slug;
 
-        $group->update($input);
+        $this->groupRepository->update($input, $id);
 
-        return $this->success($group);
+        return response()->noContent();
     }
 
     /**
@@ -134,12 +140,39 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        //
+        $slugs = explode(';', $ids);
+
+        foreach($slugs as $id) {
+
+            $group = $this->groupRepository->find($id);
+
+            if(!$group) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($group->units->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $unit = $this->unitRepository->find($id);
+            $unit->state = false;
+            $unit->save();
+        }
+
+        return response()->noContent();
     }
 
-    public function groups_classrooms(Request  $request)
+    public function groups_classrooms(Request $request)
     {
         $data = array();
         $sections = $request->user()->accounts[0]->sections;
@@ -161,11 +194,7 @@ class GroupController extends Controller
         ]);
     }
 
-    private function verify($slug) {
-
-        $group = Group::where("slug", $slug)->first();
-
-        return $group;
-
+    private function verify($id) {
+        return $this->groupRepository->find($id);
     }
 }

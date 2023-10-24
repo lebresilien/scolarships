@@ -34,12 +34,13 @@ class NoteController extends Controller
             'students.*.id' => ['required', 'exists:students,id'],
             'course_slug' => ['required', 'exists:courses,slug'],
             'sequence_slug' => ['required', 'exists:sequences,slug'],
-            'classroom_slug' => ['required', 'exists:classrooms,slug'],
+            //'classroom_slug' => ['required', 'exists:classrooms,slug'],
         ]);
 
         $input = $request->all();
 
-        $classroom = Classroom::where('slug', $input['classroom_slug'])->first();
+        if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
+        else $classroom = Classroom::where('slug', $input['classroom_slug'])->first();
             
         $sequence = Sequence::where('slug', $input['sequence_slug'])->first();
 

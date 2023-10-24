@@ -13,7 +13,8 @@ class Course extends Model
         'name',
         'slug',
         'description',
-        'unit_id'
+        'unit_id',
+        'coeff'
     ];
 
     public function groups() {
@@ -28,5 +29,5 @@ class Course extends Model
         'created_at' => 'datetime:Y-m-d',
     ];
 
-    protected $with = ['unit'];
+    //protected $with = ['unit'];
 }

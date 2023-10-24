@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('12345678'),
             ]);
 
-            $user->assignRole('Administrateur');
+            $user->assignRole('admin');
 
             $account = Account::create([
                 'name' => 'univers school',

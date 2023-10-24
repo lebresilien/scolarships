@@ -7,9 +7,21 @@ use Illuminate\Http\Request;
 use App\Models\Unit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Auth;
+use App\Repositories\UnitRepository;
+use App\Repositories\GroupRepository;
 
 class UnitController extends Controller
 {
+
+    /** @var  UnitRepository */
+    private $unitRepository;
+    private $groupRepository;
+
+    public function __construct(UnitRepository $unitRepository, GroupRepository $groupRepository) {
+        $this->unitRepository = $unitRepository;
+        $this->groupRepository = $groupRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -17,8 +29,14 @@ class UnitController extends Controller
      */
     public function index(Request $request)
     {
-        $units = $request->user()->accounts[0]->units;
-        return $units;
+        $units = $this->unitRepository->list($request);
+
+        $groups = $this->groupRepository->list($request);
+
+        return [
+            'state' => $units,
+            'additional' => $groups
+        ];
     }
 
     /**
@@ -31,12 +49,10 @@ class UnitController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            //'account_id'    => ['required', 'exists:accounts,id']
+            'group_id' => ['required', 'exists:groups,id'],
         ]);
 
-        $founderUnit = Unit::where('name', $request->name)
-                           ->where('account_id', $request->user()->accounts[0]->id)
-                           ->first();
+        $founderUnit = $this->unitRepository->all(['name' => $request->name, 'group_id' => $request->group_id])->first();
 
         if($founderUnit) return response()->json([
             "errors" => [
@@ -44,10 +60,10 @@ class UnitController extends Controller
             ]
         ],422);
 
-        Unit::create([
+        $this->unitRepository->create([
             "name" => $request->name,
             "slug" => Str::slug($request->name),
-            "account_id" => $request->user()->accounts[0]->id,
+            "group_id" => $request->group_id,
             "description" => $request->description,
         ]);
 
@@ -62,7 +78,8 @@ class UnitController extends Controller
      */
     public function show($id)
     {
-        $unit = Unit::find($id);
+        $unit = $this->unitRepository->find($id);
+
         $this->authorize('view', $unit);
 
         if(!$unit) return response()->json([
@@ -81,9 +98,29 @@ class UnitController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        //
+        $unit = $this->unitRepository->all(['slug' => $slug, 'group_id' => $request->group_id ])->first();
+
+        if(!$unit) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "L'enseigment n'existe pas"
+            ]
+        ], 400);
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:units,name,'.$unit->id],
+            'group_id' => ['required', 'exists:groups,id']
+        ]);
+
+        $input = $request->all();
+        $input['slug'] = Str::slug($input['name'], '-');
+        $input['account_id'] = Auth::user()->accounts[0]->id;
+
+        $this->unitRepository->update($input, $unit->id);
+
+        return response()->noContent();
     }
 
     /**
@@ -92,17 +129,28 @@ class UnitController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        $unit = Unit::find($id);
+        $slugs = explode(';', $ids);
 
-        if(!$unit) return response()->json([
-            "errors" => [
-                "message" => "Aucune unite d\'enseigment touvée."
-            ]
-        ]);
+        foreach($slugs as $slug) {
 
-        $unit->delete();
+            $unit = $this->unitRepository->all(['slug' => $slug])->first();
+
+            if($unit->courses->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $slug) {
+            $unit = $this->unitRepository->all(['slug' => $slug])->first();
+            $unit->state = false;
+            $unit->save();
+        }
+
         return response()->noContent();
     }
 }

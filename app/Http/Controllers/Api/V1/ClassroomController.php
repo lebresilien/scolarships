@@ -31,7 +31,9 @@ class ClassroomController extends Controller
     public function index(Request  $request)
     {
         //$account = Account::findOrFail($request->user()->accounts[0]->id);
-        return $this->service->classrooms($request);
+        return [
+                'state' => $this->service->classrooms($request)
+        ];
 
     }
 
@@ -66,14 +68,10 @@ class ClassroomController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $slug, $option = null)
+    public function show(Request $request, $slug)
     {
-       
-        { !$option ?
-            $classroom = $this->verify($slug)
-            :
-            $classroom = $request->user()->classroom;
-        }  
+        if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
+        else $classroom = $this->verify($slug);
         
         $students = $classroom->students->where('pivot.academy_id', $this->service->currentAcademy($request)->id)->where('pivot.status', 1);
         
@@ -146,12 +144,13 @@ class ClassroomController extends Controller
 
     public function students(Request $request, $slug, $course_slug, $sequence_slug) {
 
-        $classroom = $this->verify($slug);
+        if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
+        else $classroom = $this->verify($slug);
             
         $sequence = Sequence::where('slug', $sequence_slug)->first();
 
         $course = Course::where('slug', $course_slug)->first();
-
+        
         if(!$sequence || !$course) return response()->json([
             "message" =>  "Error.",
             "errors" => [

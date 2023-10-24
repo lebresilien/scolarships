@@ -7,13 +7,20 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use App\Models\{ Section, Account };
 use App\Traits\ApiResponser;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Repositories\SectionRepository;
+use Illuminate\Support\Facades\Auth;
 
 class SectionController extends Controller
 {
 
     use ApiResponser;
+    /** @var SectionRepository */
+    private $sectionRepository;
+
+    public function __construct(SectionRepository $sectionRepository) {
+        $this->sectionRepository = $sectionRepository;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -21,9 +28,11 @@ class SectionController extends Controller
      */
     public function index()
     {
-        $sections = Section::where('account_id', Auth::user()->accounts[0]->id)->get();
-        return $sections;
-        //return Section::all();
+        $sections = $this->sectionRepository->list();
+       
+        return  [
+                 'state' => $sections
+        ];
     }
 
     /**
@@ -38,14 +47,12 @@ class SectionController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:sections'],
         ]);
 
-        $section = Section::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name, '-'),
-            'description' => $request->description,
-            'account_id' => Auth::user()->accounts[0]->id
-        ]);
+        $input = $request->all();
+        $input['slug'] = Str::slug($request->name, '-');
+        $input['account_id'] = Auth::user()->accounts[0]->id;
 
-        //return $this->success($section);
+        $section = $this->sectionRepository->create($input);
+
         return response()->noContent();
     }
 
@@ -69,7 +76,27 @@ class SectionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $section = $this->sectionRepository->find($id);
+
+        if(!$section) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "La section n'existe pas"
+            ]
+        ], 400);
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:sections,name,'.$section->id],
+        ]);
+
+        $input = $request->all();
+        $input['slug'] = Str::slug($input['name'], '-');
+        $input['account_id'] = Auth::user()->accounts[0]->id;
+
+        $this->sectionRepository->update($input, $id);
+
+        return response()->noContent();
+        
     }
 
     /**
@@ -80,6 +107,18 @@ class SectionController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $section = $this->sectionRepository->find($id);
+
+        if(!$section) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "La section n'existe pas"
+            ]
+        ], 400);
+
+        $section->status = false;
+        $section->save();
+
+        return response()->noContent();
     }
 }
