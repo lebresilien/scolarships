@@ -9,19 +9,29 @@ use App\Models\{ Building, Account };
 use App\Traits\ApiResponser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Repositories\BuildingRepository;
 
 class BuildingController extends Controller
 {
     use ApiResponser;
+     /** @var BuildingRepository */
+     private $buildingRepository;
+
+    public function __construct(BuildingRepository $buildingRepository) {
+        $this->buildingRepository = $buildingRepository;
+    }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $buildings = Building::where('account_id', Auth::user()->accounts[0]->id)->get();
-        return $buildings;
+        $buildings = $this->buildingRepository->list($request);
+        return [
+            "state" => $buildings
+        ];
     }
 
     /**
@@ -33,17 +43,15 @@ class BuildingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:buildings'],
+            'name' => ['required', 'string', 'max:255', 'unique:buildings,name'],
         ]);
 
-        $building = Building::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name, '-'),
-            'description' => $request->description,
-            'account_id' => Auth::user()->accounts[0]->id
-        ]);
+        $input = $request->all();
+        $input['slug'] = Str::slug($request->name, '-');
+        $input['account_id'] = $request->user()->accounts[0]->id;
 
-        //return $this->success($section);
+        $this->buildingRepository->create($input);
+
         return response()->noContent();
     }
 
@@ -83,9 +91,9 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
-        $building = $this->verify($slug);
+        $building = $this->verify($id);
 
         if(!$building)  return response()->json([
             "message" =>  "Error.",
@@ -99,12 +107,11 @@ class BuildingController extends Controller
         ]);
         
         $input = $request->all();
-       
-        $input['slug'] = $building->slug;
+        $input['slug'] = Str::slug($input['name'], '-');
 
-        $building->update($input);
+        $this->buildingRepository->update($input, $id);
 
-        return $this->success($building);
+        return response()->noContent();
     }
 
     /**
@@ -113,16 +120,37 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        //
+        $slugs = explode(';', $ids);
+
+        foreach($slugs as $id) {
+
+            $building = $this->buildingRepository->find($id);
+
+            if(!$building) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($building->classrooms->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $this->buildingRepository->delete($id);
+        }
+
+        return response()->noContent();
     }
 
-    private function verify($slug) {
-
-        $building = Building::where('slug', $slug)->first();
-
-        return $building;
-
+    private function verify($id) {
+        return $this->buildingRepository->find($id);
     }
 }

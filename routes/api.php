@@ -62,6 +62,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('buildings', [BuildingController::class, 'index']);
     $route->get('buildings/{id}', [BuildingController::class, 'show']);
     $route->put('buildings/{id}', [BuildingController::class, 'update']);
+    $route->delete('buildings/{ids}', [BuildingController::class, 'destroy']);
 
     $route->post('classrooms', [ClassroomController::class, 'store']);
     $route->get('classrooms/students', [ClassroomController::class, 'studentList']);

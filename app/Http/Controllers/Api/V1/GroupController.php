@@ -164,9 +164,7 @@ class GroupController extends Controller
         }
 
         foreach($slugs as $id) {
-            $unit = $this->unitRepository->find($id);
-            $unit->state = false;
-            $unit->save();
+            $unit = $this->groupRepository->delete($id);
         }
 
         return response()->noContent();
