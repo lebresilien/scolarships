@@ -73,7 +73,8 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->put('classrooms/{id}', [ClassroomController::class, 'update']);
     //$route->get('classrooms/{id}/stats', [ClassroomController::class, 'stats']);
     $route->get('primary-statistics', [DashboardController::class, 'primary_statistics']);
-  
+    $route->delete('classrooms/{ids}', [ClassroomController::class, 'destroy']);
+
     $route->post('courses', [CourseController::class, 'store']);
     $route->get('courses', [CourseController::class, 'index']);
     $route->get('courses/{id}', [CourseController::class, 'show']);

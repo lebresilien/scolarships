@@ -11,17 +11,26 @@ use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponser;
 use App\Services\Service;
 use Carbon\Carbon;
+use App\Repositories\ClassroomRepository;
+use App\Repositories\GroupRepository;
+use App\Repositories\BuildingRepository;
 
 class ClassroomController extends Controller
 {
 
     use ApiResponser;
-
+    /** @var ClassroomRepository */
+    private $classroomRepository;
+    private $buildingRepository;
+    private $groupRepository;
     private $service;
     
-    public function __construct(Service $service)
+    public function __construct(Service $service, ClassroomRepository $classroomRepository, GroupRepository $groupRepository, BuildingRepository $buildingRepository)
     {
         $this->service = $service;
+        $this->classroomRepository = $classroomRepository;
+        $this->buildingRepository = $buildingRepository;
+        $this->groupRepository = $groupRepository;
     }
     /**
      * Display a listing of the resource.
@@ -30,9 +39,30 @@ class ClassroomController extends Controller
      */
     public function index(Request  $request)
     {
-        //$account = Account::findOrFail($request->user()->accounts[0]->id);
+        $buildings = $this->buildingRepository->list($request);
+        $groups = $this->groupRepository->list($request);
+
+        $collection = collect([]);
+        $group_collection = collect([]);
+
+        foreach($buildings as $building) {
+            $collection->push([
+                'value' => $building['id'],
+                'label' => $building['name']
+            ]);
+        }
+
+        foreach($groups as $group) {
+            $group_collection->push([
+                'value' => $group['id'],
+                'label' => $group['name']
+            ]);
+        }
+
         return [
-                'state' => $this->service->classrooms($request)
+            'state' => $this->service->classrooms($request),
+            'additional' => $group_collection,
+            'other' => $collection
         ];
 
     }
@@ -51,13 +81,22 @@ class ClassroomController extends Controller
             'group_id' => ['required', 'exists:groups,id'],
         ]);
 
-        Classroom::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name, '-'),
-            'description' => $request->description,
-            'building_id' => $request->building_id,
-            'group_id' => $request->group_id,
-        ]);
+        $input = $request->all();
+
+        $classroom = $this->classroomRepository->all([
+            "name" => $input['name'],
+            "group_id" => $input['group_id']
+        ])->first();
+
+        if($classroom)  return response()->json([
+            "errors" => [
+                "message" => "Cette salle existe deja."
+            ]
+        ], 400); 
+
+        $input['slug'] = Str::slug($request->name, '-');
+
+        $this->classroomRepository->create($input);
 
         return response()->noContent();
     }
@@ -108,10 +147,9 @@ class ClassroomController extends Controller
 
         $input = $request->all();
 
-        $classroom->update($input);
+        $this->classroomRepository->update($input, $id);
 
-        return $this->success($classroom);
-
+        return response()->noContent();
     }
 
     /**
@@ -120,9 +158,34 @@ class ClassroomController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        //
+        $slugs = explode(';', $ids);
+
+        foreach($slugs as $id) {
+
+            $classroom = $this->classroomRepository->find($id);
+
+            if(!$classroom) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($classroom->students->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $this->classroomRepository->delete($id);
+        }
+
+        return response()->noContent();
     }
 
     public function courses(Request $request, $slug) {

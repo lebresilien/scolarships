@@ -30,17 +30,30 @@ class Service {
 
         foreach($sections as $section) {
 
-            $groups = Group::where('section_id', $section->id)->get();
+            //$groups = Group::where('section_id', $section->id)->get();
            
-            if(count($groups) > 0 ) {
+            //if(count($groups) > 0 ) {
 
-                foreach($groups as $group) {
+                foreach($section->groups as $group) {
                     
                     if(count($group->classrooms) > 0) {
 
                         foreach($group->classrooms as $classroom) {
-
-                            array_push($data, $classroom);
+                            array_push($data, [
+                                'id' => $classroom->id,
+                                'name' => $classroom->name,
+                                'description' => $classroom->description,
+                                'slug' => $classroom->slug,
+                                'created_at' => $classroom->created_at->format('Y-m-d'),
+                                'group' => [
+                                    'value' => $classroom->group->id,
+                                    'label' => $classroom->group->name,
+                                ],
+                                'building' => [
+                                    'value' => $classroom->building->id,
+                                    'label' => $classroom->building->name,
+                                ]
+                            ]);
 
                         }
                     }
@@ -48,9 +61,9 @@ class Service {
 
                 }
                 
-            }
+            //}
         }
 
-        return response()->json($data);
+        return $data;
     }
 }
