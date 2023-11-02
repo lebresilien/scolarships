@@ -29,8 +29,6 @@ class Service {
         $sections = $request->user()->accounts[0]->sections;
 
         foreach($sections as $section) {
-
-            //$groups = Group::where('section_id', $section->id)->get();
            
             //if(count($groups) > 0 ) {
 

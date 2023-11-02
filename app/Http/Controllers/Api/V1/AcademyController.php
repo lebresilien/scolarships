@@ -69,13 +69,13 @@ class AcademyController extends Controller
             ]
         ], 422);
 
-        $this->academyRepository->create([
+        $academy = $this->academyRepository->create([
             "name" => $request->name,
             "slug" => Str::slug($request->name, '-'),
             "account_id" => $request->user()->accounts[0]->id
         ]);
 
-        return response()->noContent();
+        return $this->success($academy, 'ajout');
 
     }
 

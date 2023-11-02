@@ -53,7 +53,7 @@ class SectionController extends Controller
 
         $section = $this->sectionRepository->create($input);
 
-        return response()->noContent();
+        return $this->success($section, 'ajout');
     }
 
     /**

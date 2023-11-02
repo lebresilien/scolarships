@@ -50,9 +50,9 @@ class BuildingController extends Controller
         $input['slug'] = Str::slug($request->name, '-');
         $input['account_id'] = $request->user()->accounts[0]->id;
 
-        $this->buildingRepository->create($input);
+        $building = $this->buildingRepository->create($input);
 
-        return response()->noContent();
+        return $this->success($building, 'ajout');
     }
 
     /**

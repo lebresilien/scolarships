@@ -84,73 +84,23 @@ class CourseController extends Controller
 
         try { */
 
-            $founderCourse = $this->courseRepository->all([
-                'name' => $request->name,
-                'unit_id' => $request->unit_id
-            ])->first();
+        $founderCourse = $this->courseRepository->all([
+            'name' => $request->name,
+            'unit_id' => $request->unit_id
+        ])->first();
 
-            if($founderCourse)  return response()->json([
-                "errors" => [
-                    "message" => "Ce cours existe deja."
-                ]
-            ], 422);
+        if($founderCourse)  return response()->json([
+            "errors" => [
+                "message" => "Ce cours existe deja."
+            ]
+        ], 422);
 
-            $input = $request->all();
-            $input['slug'] = Str::slug($request->name, '-');
+        $input = $request->all();
+        $input['slug'] = Str::slug($request->name, '-');
 
-            $this->courseRepository->create($input);
-                
-            /*  foreach($request->selectedCheckbox as $id) {
-
-                $group = $this->groupRepository->find($id);
-
-                if(!$group) return response()->json([
-                    "message" =>  "A group does not exit.",
-                    "errors" => [
-                        "message" => "A group does not exit"
-                    ]
-                ], 422);
-                
-                $course->groups()->attach($id);
-
-            } 
-            
-            else {
-                
-                foreach($request->selectedCheckbox as $id) {
-
-                    $founderGroup = $this->courseRepository->find($id);
-
-                    if($founderGroup) {
-
-                        $group = GroupCourse::where([
-                            ["course_id", $founderCourse->id],
-                            ["group_id", $id]
-                        ])->first();
-
-                        if($group) return response()->json([
-                            "message" =>  "A group alraedy have the course.",
-                            "errors" => [
-                                "message" => "A group alraedy have the course"
-                            ]
-                        ], 422);
-
-                        $founderCourse->groups()->attach($id);
-
-                    } 
-
-                }
-
-            }
-
-            DB::commit();
-
-        }catch(\Exception $e) {
-            DB::rollback();
-            return $e->getMessage();
-        } */
-
-        return response()->noContent();
+        $course = $this->courseRepository->create($input);
+        
+        return $this->success($course, 'ajout');
     }
 
     /**
@@ -198,15 +148,6 @@ class CourseController extends Controller
         ],422);
 
         $input = $request->all();
-
-        /* $course = $this->courseRepository->all(['name' => $input['name'], 'unit_id' => $input['unit_id']])->first();
-
-        if(!$course) return response()->json([
-            "message" =>"Ce cours existe pas.",
-            "errors" => [
-                "message" => "un cours avec ce nom existe deja."
-            ]
-        ],422); */
 
         $input['slug'] = Str::slug($request->name, '-');
 

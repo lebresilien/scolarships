@@ -8,16 +8,28 @@ use App\Traits\ApiResponser;
 use App\Services\Service;
 use Illuminate\Support\Str;
 use App\Models\{ Sequence, Academy, Section, Classroom, Group };
+use App\Repositories\SequenceRepository;
+use App\Repositories\AcademyRepository;
+use App\Repositories\GroupRepository;
+use App\Repositories\SectionRepository;
 
 class SequenceController extends Controller
 {
     use ApiResponser;
-
+    /** @var SequenceRepository */
+    private $sequenceRepository;
     private $service;
+    private $academyRepository;
+    private $groupRepository;
+    private $sectionRepository;
     
-    public function __construct(Service $service)
+    public function __construct(Service $service, SequenceRepository $sequenceRepository, AcademyRepository $academyRepository, GroupRepository $groupRepository, SectionRepository $sectionRepository)
     {
         $this->service = $service;
+        $this->sequenceRepository = $sequenceRepository;
+        $this->academyRepository = $academyRepository;
+        $this->groupRepository = $groupRepository;
+        $this->sectionRepository = $sectionRepository;
     }
 
     /**
@@ -29,9 +41,11 @@ class SequenceController extends Controller
     {
         $current_id = $this->service->currentAcademy($request)->id;
 
-        $academy = Academy::find($current_id);
+        $academy = $this->academyRepository->find($current_id);
 
-        return $academy->sequences;
+        return [
+            "state" => $academy->sequences
+        ];
     }
 
     /**
@@ -42,9 +56,17 @@ class SequenceController extends Controller
      */
     public function store(Request $request)
     {
-        $id = $this->service->currentAcademy($request)->id;
+        $request->validate([
+            'name' => ['required', 'string', 'max:255']
+        ]);
 
-        $sequence = Sequence::where('name', $request->name)->first();
+        $id = $this->service->currentAcademy($request)->id;
+        $input = $request->all();
+
+        $sequence = $this->sequenceRepository->all([
+            'name' => $input['name'],
+            'academy_id' => $id
+        ])->first();
 
         if($sequence) return response()->json([
             "message" =>  "Error.",
@@ -53,13 +75,12 @@ class SequenceController extends Controller
             ]
         ], 400);
 
-        Sequence::create([
-            "name" => $request->name,
-            "slug" => Str::slug($request->name, '-'),
-            "academy_id" => $id,
-        ]);
+        $input["academy_id"] = $id;
+        $input["slug"] = Str::slug($request->name, '-');
 
-        return response()->noContent();
+        $sequence = $this->sequenceRepository->create($input);
+
+        return $this->success($sequence, 'ajout de sequence');
     }
 
     /**
@@ -82,17 +103,26 @@ class SequenceController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $current_id = $this->service->currentAcademy($request)->id;
-
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:sequences,name,' .$current_id],
+            'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $sequence = $this->verify($id);
+        $sequence = $this->sequenceRepository->find($id);
 
-        $sequence->update($input);
+        if(!$sequence) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Sequence non trouvée"
+            ]
+        ], 400);
 
-        return $this->success($classroom);
+        $current_id = $this->service->currentAcademy($request)->id;
+
+        $input = $request->all();
+
+        $this->sequenceRepository->update($input, $id);
+
+        return response()->noContent();
     }
 
     /**
@@ -101,20 +131,39 @@ class SequenceController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        $sequence = $this->verify($id);
+        $slugs = explode(';', $ids);
 
-        $sequence->update([
-            "status" => 0
-        ]);
+        foreach($slugs as $id) {
+
+            $sequence = $this->sequenceRepository->find($id);
+
+            if(!$sequence) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($sequence->notes->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $this->sequenceRepository->delete($id);
+        }
 
         return response()->noContent();
     }
 
-    public function verify($slug) {
+    public function verify($id) {
 
-        $sequence = Sequence::where('slug', $slug)->first();
+        $sequence = $this->sequenceRepository->find($id);
 
         if(!$sequence) return response()->json([
             "message" =>  "Error.",
@@ -126,9 +175,16 @@ class SequenceController extends Controller
         return $sequence;
     }
 
-    public function sections($sequence_slug) {
+    public function sections($sequence_id) {
 
-        $sequence = $this->verify($sequence_slug);
+        $sequence = $this->sequenceRepository->find($sequence_id);
+
+        if(!$sequence) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Sequence non trouvée"
+            ]
+        ], 400);
 
         $collection = collect([]);
 
@@ -154,15 +210,18 @@ class SequenceController extends Controller
 
         }
 
-        return $collection;
+        return [
+            'data' => $collection,
+            'title' => $sequence->name
+        ];
 
     }
 
-    public function groups($sequence_slug, $section_slug) {
+    public function groups($sequence_id, $section_id) {
 
-        $sequence = $this->verify($sequence_slug);
+        $sequence = $this->verify($sequence_id);
 
-        $section = Section::where('slug', $section_slug)->first();
+        $section = $this->sectionRepository->find($section_id);
         
         if(!$section) return response()->json([
             "message" =>  "Error.",
@@ -197,11 +256,18 @@ class SequenceController extends Controller
         return $collection;
     }
 
-    public function classrooms($sequence_slug, $classroom_slug) {
+    public function classrooms($sequence_id, $classroom_id) {
 
-        $sequence = $this->verify($sequence_slug);
+        $sequence = $this->sequenceRepository->find($sequence_id);
 
-        $group = Group::where('slug', $classroom_slug)->first();
+        if(!$sequence) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Sequence non trouvée"
+            ]
+        ], 400);
+
+        $group = $this->groupRepository->find($classroom_id);
 
         if(!$group) return response()->json([
             "message" =>  "Error.",

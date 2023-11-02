@@ -60,14 +60,14 @@ class UnitController extends Controller
             ]
         ],422);
 
-        $this->unitRepository->create([
+        $unit = $this->unitRepository->create([
             "name" => $request->name,
             "slug" => Str::slug($request->name),
             "group_id" => $request->group_id,
             "description" => $request->description,
         ]);
 
-        return response()->noContent();
+        return $this->success($unit, 'ajout');
     }
 
     /**

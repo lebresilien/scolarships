@@ -96,9 +96,9 @@ class ClassroomController extends Controller
 
         $input['slug'] = Str::slug($request->name, '-');
 
-        $this->classroomRepository->create($input);
+        $classroom = $this->classroomRepository->create($input);
 
-        return response()->noContent();
+        return $this->success($classroom, 'ajout de classe');
     }
 
     /**

@@ -109,10 +109,11 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('sequences', [SequenceController::class, 'store']);
     $route->get('sequences', [SequenceController::class, 'index']);
     $route->get('sequences/{id}', [SequenceController::class, 'show']);
-    $route->get('sequences/{sequence_slug}/sections', [SequenceController::class, 'sections']);
-    $route->get('sequences/{sequence_slug}/groups/{section_slug}', [SequenceController::class, 'groups']);
-    $route->get('sequences/{sequence_slug}/classrooms/{classroom_slug}', [SequenceController::class, 'classrooms']);
-    $route->delete('sequences/{id}', [SequenceController::class, 'destroy']);
+    $route->get('sequences/{id}/sections', [SequenceController::class, 'sections']);
+    $route->get('sequences/{id}/groups/{id}', [SequenceController::class, 'groups']);
+    $route->get('sequences/{id}/classrooms/{id}', [SequenceController::class, 'classrooms']);
+    $route->delete('sequences/{ids}', [SequenceController::class, 'destroy']);
+    $route->put('sequences/{id}', [SequenceController::class, 'update']);
 
     $route->post('notes', [NoteController::class, 'store']);
 

@@ -66,9 +66,9 @@ class GroupController extends Controller
         $input = $request->all();
         $input['slug'] = Str::slug($request->name, '-');
 
-        $this->groupRepository->create($input);
+        $group = $this->groupRepository->create($input);
 
-        return response()->noContent();
+        return $this->success($group, 'ajout');;
     }
 
     /**
