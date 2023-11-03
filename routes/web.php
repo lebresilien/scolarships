@@ -23,17 +23,9 @@ Route::get('/', function () {
 });
 
 Route::get('/test', function () {
-
-    User::find(1)->update(['password' => Hash::make('12345678')]);
-   /*  $classroom = Classroom::find(2);
-    
-    $data =  $classroom->notes->groupBy('student_id');
-    return $data->map(function($item) {
-        return $item->sum('value');
-    });
-    return $data->all();
-    $data = Note::select(DB::raw('sum(value) as total'))->groupBy('student_id')->get();
- return ($data); */
+  return now()->format('Y');
+   
+   
   
 });
 

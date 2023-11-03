@@ -8,14 +8,24 @@ use App\Models\{ Student, Inscription, Transaction };
 use App\Services\Service;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Repositories\StudentRepository;
+use App\Repositories\TransactionRepository;
+use Earmark;
+use App\Traits\ApiResponser;
 
 class StudentController extends Controller
 {
+    use ApiResponser;
+    /** @var StudentRepository */
+    private $studentRepository;
     private $service;
+    private $transactionRepository;
     
-    public function __construct(Service $service)
+    public function __construct(Service $service, StudentRepository $studentRepository, TransactionRepository $transactionRepository)
     {
         $this->service = $service;
+        $this->studentRepository = $studentRepository;
+        $this->transactionRepository = $transactionRepository;
     }
 
     /**
@@ -24,7 +34,7 @@ class StudentController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-    {
+    { 
         $data = array();
 
         foreach($request->user()->accounts[0]->sections  as $section) {
@@ -52,9 +62,6 @@ class StudentController extends Controller
         
         $collection = collect($data)->unique('matricule');
         return $collection->values()->all();
-       
-        //return response()->json($data);
-       
     }
 
     /**
@@ -80,71 +87,48 @@ class StudentController extends Controller
             'quarter' => ['required', 'string', 'max:255'],
             'classroom_id' => ['required', 'exists:classrooms,id'],
             'amount' =>  ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
-            'type' => ['required', 'string']
-
+            'type' => ['required', 'string'],
+            'student_id' => ['sometimes', 'exists:students,id'],
         ]);
 
         DB::beginTransaction();
 
         try {
 
-            $student;
+            $input = $request->all();
 
             if($request->type == "new") {
 
                 $register_number = null; 
-            
-                do {
 
-                    $register_number = $this->service->generate();
-
-                    $founder_student = Student::where('matricule', $register_number)->exists();
-                
-                } while($founder_student);
-
-                $find_student = Student::where([
-
-                    [ "lname", $request->lname ],
-                    [ "fname", $request->fname ],
-                    [ "mother_name", $request->mother_name ],
-                    [ "born_at", $request->born_at ]
-
+                $find_student = $this->studentRepository->all([
+                    'lname' =>  $input['lname'],
+                    'fname' => $input['fname'],
+                    'sexe' => $input['sexe'],
+                    'born_at' => $request['born_at']
                 ])->first();
 
                 if($find_student) return response()->json([
                     "errors" => [
                         "message" => "Cet eleve a deja un compte"
                     ]
-                ], 422);
+                ], 400);
+
+                $earmark = new Earmark(now()->format('Y'). $request->user()->accounts[0]->matricule, null, 3, 00, null);
+                $input['matricule'] = $earmark->get();
+                $input['slug'] = Str::slug($input['fname'].' '.$input['lname'], '-');
                 
-                $student = Student::create([
-
-                    "lname" => $request->lname,
-                    "fname" => $request->fname,
-                    "matricule" => $register_number,
-                    "slug" => Str::slug($request->fname.' '.$request->lname.' '.$register_number, '-'),
-                    "sexe" => $request->sexe,
-                    "father_name" => $request->father_name,
-                    "mother_name" => $request->mother_name,
-                    "fphone" => $request->fphone,
-                    "mphone" => $request->mphone,
-                    "born_at" => $request->born_at,
-                    "born_place" => $request->born_place,
-                    "allergy" => $request->allergy,
-                    "description" => $request->description,
-                    "quarter" => $request->quarter,
-
-                ]);  
+                $student = $this->studentRepository->create($input);  
 
             } else {
 
-                $student = Student::where('matricule', $request->matricule)->first();
+                $student = $this->studentRepository->find($input['id']);
 
                 if(!$student) return response()->json([
                     "errors" => [
                         "message" => "Eleve non trouvé"
                     ]
-                ], 422);
+                ], 400);
 
             }
 
@@ -155,43 +139,24 @@ class StudentController extends Controller
                 ]
             ], 422);
 
-            // check same school year registration duplication  
-            $founder_registration = Inscription::where([
+            $student->classrooms()->attach($input['classroom_id'], ["academy_id" => $this->service->currentAcademy($request)->id]);
+            $policy = $this->studentRepository->getPolicy($student->id, $input['classroom_id']);
 
-                ["academy_id", $this->service->currentAcademy($request)->id],
-                ["student_id", $student->id]
-
-            ])->first();
-            
-            if($founder_registration) return response()->json([
-                "errors" => [
-                    "message" => "Cet eleve est deja inscris pour l'année scolaire en cours"
-                ]
-            ], 422);
-            
-            // insert data in inscription  table
-            $inscription = Inscription::create([
-                "classroom_id" => $request->classroom_id,
-                "academy_id" => $this->service->currentAcademy($request)->id,
-                "student_id" => $student->id
-            ]);
-
-            // insert data in transaction table
-            Transaction::create([
-                "inscription_id" => $inscription->id,
-                "amount" => $request->amount,
+            //Insert data in transaction table
+            $this->transactionRepository->create([
+                "inscription_id" => $policy->id,
+                "amount" => $input['amount'],
                 "name" => "inscription"
             ]);
 
             DB::commit();
 
-            return response()->noContent();
+            return $this->success($student, 'Ajout');
 
         } catch(\Exception $e) {
             DB::rollback();
             return $e->getMessage();
         }
-
 
     }
 
@@ -201,9 +166,9 @@ class StudentController extends Controller
      * @param  int  $slug
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $slug)
+    public function show(Request $request, $id)
     {
-        $student = Student::where('slug', $slug)->with(['classrooms' => function($req) {
+        $student = $this->studentRepository->find($id)->with(['classrooms' => function($req) {
               $req->orderBy('id', 'desc')->first();
         }])->first();
 
@@ -221,7 +186,7 @@ class StudentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
 
         $request->validate([
@@ -239,7 +204,7 @@ class StudentController extends Controller
             'classroom_id' => ['required', 'exists:classrooms,id'],
         ]);
 
-        $student = Student::where('slug', $slug)->first();
+        $student = $this->studentRepository->find($id);
 
         if(!$student) return response()->json([
             "errors" => [
@@ -251,7 +216,7 @@ class StudentController extends Controller
 
         try {
 
-            $student->update([
+            $$this->studentRepository->update([
                 "lname" => $request->lname,
                 "fname" => $request->fname,
                 //"slug" => Str::slug($request->fname.' '.$request->lname.' '.$student->matricule, '-'),
@@ -264,7 +229,7 @@ class StudentController extends Controller
                 "fphone" => $request->fphone,
                 "born_at" => $request->born_at,
                 "born_place" => $request->born_place,
-            ]);
+            ], $id);
 
             //check if active academy year exists
             if(!$this->service->currentAcademy($request)) return response()->json([
@@ -275,12 +240,9 @@ class StudentController extends Controller
 
             //find registration current academic year  
             $founder_registration = Inscription::where([
-
                 ["academy_id", $this->service->currentAcademy($request)->id],
                 ["student_id", $student->id]
-
             ])->first();
-
             $founder_registration->update(["classroom_id" => $request->classroom_id]);
 
             DB::commit();
@@ -299,23 +261,38 @@ class StudentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($slug)
+    public function destroy($ids)
     {
-        $student = Student::where('slug', $slug)->first();
+        $slugs = explode(';', $ids);
 
-        if(!$student) return response()->json([
-            "errors" => [
-                "message" => "Une erreur innattendue est survenue."
-            ]
-        ], 422);
+        foreach($slugs as $id) {
 
-        $student->delete();
+            $student = $this->studentRepository->find($id);
+
+            if(!$student) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($student->notes->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $this->studentRepository->delete($id);
+        }
 
         return response()->noContent();
     }
 
     //student all transactions  and extensions
-    public function details(Request $request, $slug) {
+    public function details(Request $request, $id) {
 
         //current year transactions
         if(!$this->service->currentAcademy($request)) {
@@ -323,12 +300,13 @@ class StudentController extends Controller
             $foundCurrentYearExtensions = null;
         }else {
 
-            $foundStudent = Student::where('slug', $slug)->first();
+            $foundStudent = $this->studentRepository->find($id);
+            
             if(!$foundStudent) return response()->json([
                 "errors" => [
-                    "message" => "Une erreur innattendue est survenue."
+                    "message" => "Cet apprenant n'existe pas."
                 ]
-            ], 422);
+            ], 400);
 
             //current year transactions
             $foundCurrentYearTransactions = Inscription::where([

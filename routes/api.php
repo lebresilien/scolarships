@@ -68,7 +68,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('classrooms/students', [ClassroomController::class, 'studentList']);
     $route->get('classrooms/{id}', [ClassroomController::class, 'show']);
     $route->get('classrooms', [ClassroomController::class, 'index']);
-    $route->get('classrooms/{id}/courses/{course_slug}/sequences/{sequence_slug}/students', [ClassroomController::class, 'students']);
+    $route->get('classrooms/{id}/courses/{course_id}/sequences/{sequence_id}/students', [ClassroomController::class, 'students']);
     $route->get('classrooms/{id}/courses', [ClassroomController::class, 'courses']);
     $route->put('classrooms/{id}', [ClassroomController::class, 'update']);
     //$route->get('classrooms/{id}/stats', [ClassroomController::class, 'stats']);
@@ -84,7 +84,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('academies', [AcademyController::class, 'store']);
     $route->get('academies', [AcademyController::class, 'index']);
     $route->put('academies/{id}', [AcademyController::class, 'update']);
-    $route->delete('academies/{slugs}', [AcademyController::class, 'destroy']);
+    $route->delete('academies/{ids}', [AcademyController::class, 'destroy']);
 
     $route->get('students', [StudentController::class, 'index']);
     $route->get('students/{id}', [StudentController::class, 'show']);
@@ -104,14 +104,14 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('units', [UnitController::class, 'index']);
     $route->get('units/{id}', [UnitController::class, 'show']);
     $route->put('units/{id}', [UnitController::class, 'update']);
-    $route->delete('units/{slugs}', [UnitController::class, 'destroy']);
+    $route->delete('units/{ids}', [UnitController::class, 'destroy']);
 
     $route->post('sequences', [SequenceController::class, 'store']);
     $route->get('sequences', [SequenceController::class, 'index']);
     $route->get('sequences/{id}', [SequenceController::class, 'show']);
     $route->get('sequences/{id}/sections', [SequenceController::class, 'sections']);
-    $route->get('sequences/{id}/groups/{id}', [SequenceController::class, 'groups']);
-    $route->get('sequences/{id}/classrooms/{id}', [SequenceController::class, 'classrooms']);
+    $route->get('sequences/{id}/groups/{group_id}', [SequenceController::class, 'groups']);
+    $route->get('sequences/{id}/classrooms/{classroom_id}', [SequenceController::class, 'classrooms']);
     $route->delete('sequences/{ids}', [SequenceController::class, 'destroy']);
     $route->put('sequences/{id}', [SequenceController::class, 'update']);
 
@@ -120,6 +120,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('signature_pad', [AccountController::class, 'signature_pad']);
 
     $route->get('test', function(Request $request) {
+        return now()->format('Y');
         // Carbon::now()->format('Y-m-d');
         ///return 'fnf';
         //$account_courses = $request->user()->accounts[0]->units;
