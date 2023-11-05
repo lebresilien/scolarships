@@ -32,4 +32,36 @@ class StudentRepository extends BaseRepository
         return Inscription::where('student_id', $student_id)->where('classroom_id', $classroom_id)->first();
     }
 
+    public function list($sections) {
+
+        $data = array();
+
+        foreach($sections  as $section) {
+            
+            foreach($section->groups as $group) {
+                                 
+                foreach($group->classrooms as $classroom) {
+
+                    if(count($classroom->students) > 0 ) {
+
+                        foreach($classroom->students as $student) {
+                            
+                            array_push($data, $student);
+                            
+                        }
+                        
+                    }
+                     
+
+                }
+
+            }
+
+        }
+        
+        $collection = collect($data)->unique('matricule');
+        
+        return $collection->values()->all();
+    }
+
 }

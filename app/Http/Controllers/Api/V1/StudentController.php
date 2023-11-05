@@ -35,33 +35,13 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     { 
-        $data = array();
+        $students = $this->studentRepository->list($request->user()->accounts[0]->sections);
+        $classrooms = $this->service->classrooms($request);
 
-        foreach($request->user()->accounts[0]->sections  as $section) {
-            
-            foreach($section->groups as $group) {
-                                 
-                foreach($group->classrooms as $classroom) {
-
-                    if(count($classroom->students) > 0 ) {
-
-                        foreach($classroom->students as $student) {
-                            
-                            array_push($data, $student);
-                            
-                        }
-                        
-                    }
-                     
-
-                }
-
-            }
-
-        }
-        
-        $collection = collect($data)->unique('matricule');
-        return $collection->values()->all();
+        return [
+            'state' => $students,
+            'additional' => $classrooms
+        ];
     }
 
     /**
@@ -168,14 +148,19 @@ class StudentController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $student = $this->studentRepository->find($id)->with(['classrooms' => function($req) {
+       /*  $student = $this->studentRepository->find($id)->with(['classrooms' => function($req) {
               $req->orderBy('id', 'desc')->first();
-        }])->first();
+        }])->first(); */
 
-        return response()->json([
-            "student" => $student, 
-            "classrooms" => $this->service->classrooms($request)
-        ]);
+        $student = $this->studentRepository->find($id);
+
+        if(!$student) return response()->json([
+            "errors" => [
+                "message" => "Aucun apprénant trouvé"
+            ]
+        ], 400);
+
+        return $this->success($student, 'Details');
 
     }
 
@@ -210,7 +195,7 @@ class StudentController extends Controller
             "errors" => [
                 "message" => "Aucun eleve trouvé"
             ]
-        ], 422);
+        ], 400);
 
         DB::beginTransaction();
 
