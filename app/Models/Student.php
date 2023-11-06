@@ -26,7 +26,8 @@ class Student extends Model
         'logo',
         'description',
         'quarter',
-        'status'
+        'status',
+        'comming'
     ];
 
     protected $dates = [ 'deleted_at' ];

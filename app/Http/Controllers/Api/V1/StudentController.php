@@ -36,7 +36,14 @@ class StudentController extends Controller
     public function index(Request $request)
     { 
         $students = $this->studentRepository->list($request->user()->accounts[0]->sections);
-        $classrooms = $this->service->classrooms($request);
+        $classrooms = collect([]);
+
+        foreach($this->service->classrooms($request) as $classroom) {
+            $classrooms->push([
+                'value' => $classroom['id'],
+                'label' => $classroom['name']
+            ]);
+        }
 
         return [
             'state' => $students,
@@ -67,76 +74,47 @@ class StudentController extends Controller
             'quarter' => ['required', 'string', 'max:255'],
             'classroom_id' => ['required', 'exists:classrooms,id'],
             'amount' =>  ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
-            'type' => ['required', 'string'],
-            'student_id' => ['sometimes', 'exists:students,id'],
         ]);
 
-        DB::beginTransaction();
+        $input = $request->all();
 
-        try {
+        $find_student = $this->studentRepository->all([
+            'lname' =>  $input['lname'],
+            'fname' => $input['fname'],
+            'sexe' => $input['sexe'],
+            'born_at' => $request['born_at']
+        ])->first();
 
-            $input = $request->all();
+        if($find_student) return response()->json([
+            "errors" => [
+                "message" => "Cet eleve a deja un compte"
+            ]
+        ], 400);
 
-            if($request->type == "new") {
+        $earmark = new Earmark(now()->format('Y'). $request->user()->accounts[0]->matricule, null, 3, 00, null);
+        $input['matricule'] = $earmark->get();
+        $input['slug'] = Str::slug($input['fname'].' '.$input['lname'], '-');
+        
+        $student = $this->studentRepository->create($input);  
 
-                $register_number = null; 
+        //check if active academy year exists
+        if(!$this->service->currentAcademy($request)) return response()->json([
+            "errors" => [
+                "message" => "Aucune année academique active."
+            ]
+        ], 422);
 
-                $find_student = $this->studentRepository->all([
-                    'lname' =>  $input['lname'],
-                    'fname' => $input['fname'],
-                    'sexe' => $input['sexe'],
-                    'born_at' => $request['born_at']
-                ])->first();
+        $student->classrooms()->attach($input['classroom_id'], ["academy_id" => $this->service->currentAcademy($request)->id]);
+        $policy = $this->studentRepository->getPolicy($student->id, $input['classroom_id']);
 
-                if($find_student) return response()->json([
-                    "errors" => [
-                        "message" => "Cet eleve a deja un compte"
-                    ]
-                ], 400);
+        //Insert data in transaction table
+        $this->transactionRepository->create([
+            "inscription_id" => $policy->id,
+            "amount" => $input['amount'],
+            "name" => "inscription"
+        ]);
 
-                $earmark = new Earmark(now()->format('Y'). $request->user()->accounts[0]->matricule, null, 3, 00, null);
-                $input['matricule'] = $earmark->get();
-                $input['slug'] = Str::slug($input['fname'].' '.$input['lname'], '-');
-                
-                $student = $this->studentRepository->create($input);  
-
-            } else {
-
-                $student = $this->studentRepository->find($input['id']);
-
-                if(!$student) return response()->json([
-                    "errors" => [
-                        "message" => "Eleve non trouvé"
-                    ]
-                ], 400);
-
-            }
-
-            //check if active academy year exists
-            if(!$this->service->currentAcademy($request)) return response()->json([
-                "errors" => [
-                    "message" => "Aucune année academique active."
-                ]
-            ], 422);
-
-            $student->classrooms()->attach($input['classroom_id'], ["academy_id" => $this->service->currentAcademy($request)->id]);
-            $policy = $this->studentRepository->getPolicy($student->id, $input['classroom_id']);
-
-            //Insert data in transaction table
-            $this->transactionRepository->create([
-                "inscription_id" => $policy->id,
-                "amount" => $input['amount'],
-                "name" => "inscription"
-            ]);
-
-            DB::commit();
-
-            return $this->success($student, 'Ajout');
-
-        } catch(\Exception $e) {
-            DB::rollback();
-            return $e->getMessage();
-        }
+        return $this->success($student, 'Ajout');
 
     }
 
@@ -148,10 +126,6 @@ class StudentController extends Controller
      */
     public function show(Request $request, $id)
     {
-       /*  $student = $this->studentRepository->find($id)->with(['classrooms' => function($req) {
-              $req->orderBy('id', 'desc')->first();
-        }])->first(); */
-
         $student = $this->studentRepository->find($id);
 
         if(!$student) return response()->json([
