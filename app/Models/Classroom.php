@@ -34,7 +34,7 @@ class Classroom extends Model
     } 
 
     public function students() {
-        return $this->belongsToMany(Student::class, 'inscriptions')->withPivot('status', 'academy_id');
+        return $this->belongsToMany(Student::class, 'inscriptions')->withPivot('academy_id');
     }
 
     /* public function getBuildingNameAttribute() {

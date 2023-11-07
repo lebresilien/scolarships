@@ -32,8 +32,12 @@ class Student extends Model
 
     protected $dates = [ 'deleted_at' ];
 
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d',
+    ];
+
     public function classrooms() {
-        return $this->belongsToMany(Classroom::class, 'inscriptions');
+        return $this->belongsToMany(Classroom::class, 'inscriptions')->withPivot(['academy_id', 'id']);
     }
 
     public function notes() {

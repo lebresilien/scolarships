@@ -159,8 +159,7 @@ class StudentController extends Controller
             'born_at' => ['required', 'date', 'date_format:Y-m-d'],
             'born_place' => ['required', 'string', 'max:255'],
             'allergy' => ['nullable', 'string'],
-            'quarter' => ['required', 'string', 'max:255'],
-            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'quarter' => ['required', 'string', 'max:255']
         ]);
 
         $student = $this->studentRepository->find($id);
@@ -171,47 +170,12 @@ class StudentController extends Controller
             ]
         ], 400);
 
-        DB::beginTransaction();
+        $input = $request->all();
 
-        try {
+        $this->studentRepository->update($input, $id);
 
-            $$this->studentRepository->update([
-                "lname" => $request->lname,
-                "fname" => $request->fname,
-                //"slug" => Str::slug($request->fname.' '.$request->lname.' '.$student->matricule, '-'),
-                "sexe" => $request->sexe,
-                "allergy" => $request->allergy,
-                "quarter" => $request->quarter,
-                "mother_name" => $request->mother_name,
-                "mphone" => $request->mphone,
-                "father_name" => $request->father_name,
-                "fphone" => $request->fphone,
-                "born_at" => $request->born_at,
-                "born_place" => $request->born_place,
-            ], $id);
+        return response()->noContent();
 
-            //check if active academy year exists
-            if(!$this->service->currentAcademy($request)) return response()->json([
-                "errors" => [
-                    "message" => "Aucune année academique active."
-                ]
-            ], 422);
-
-            //find registration current academic year  
-            $founder_registration = Inscription::where([
-                ["academy_id", $this->service->currentAcademy($request)->id],
-                ["student_id", $student->id]
-            ])->first();
-            $founder_registration->update(["classroom_id" => $request->classroom_id]);
-
-            DB::commit();
-
-            return response()->noContent();
-
-        } catch(\Exception $e) {
-            DB::rollback();
-            return $e->getMessage();
-        }
     }
 
     /**
@@ -250,6 +214,25 @@ class StudentController extends Controller
         return response()->noContent();
     }
 
+    public function currentYearInscription(Request $request) {
+
+        $students = $this->studentRepository->currentYearInscription($request->user()->accounts[0]->sections, $this->service->currentAcademy($request));
+
+        $classrooms = collect([]);
+
+        foreach($this->service->classrooms($request) as $classroom) {
+            $classrooms->push([
+                'value' => $classroom['id'],
+                'label' => $classroom['name']
+            ]);
+        }
+        return $this->success([
+            'state' => $students,
+            'additional' => $classrooms,
+        ],'currentYearInscription');
+
+    }
+
     //student all transactions  and extensions
     public function details(Request $request, $id) {
 
@@ -257,7 +240,7 @@ class StudentController extends Controller
         if(!$this->service->currentAcademy($request)) {
             $foundCurrentYearTransactions = null;
             $foundCurrentYearExtensions = null;
-        }else {
+        } else {
 
             $foundStudent = $this->studentRepository->find($id);
             

@@ -94,6 +94,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('students/{id}/details', [StudentController::class, 'details']);
     $route->get('students/{classroom_id}/{amount}/fees', [StudentController::class, 'fees']);
 
+    $route->get('policies', [StudentController::class, 'currentYearInscription']);
     $route->post('transactions', [TransactionController::class, 'store']);
 
     $route->post('extensions', [ExtensionController::class, 'store']);
@@ -147,7 +148,7 @@ Route::group(['prefix' => 'v1'], function($route) {
     });
 });
 
-Route::get('v1/hello', function() {
+Route::get('v1/ho', function() {
 
    /*  $username = 'dcf5f9f7-eb61-40be-ab3c-557f6b51cbd4';
 	$password = '4accc57e7c434f9f823c8644b5a2c03b';
