@@ -24,4 +24,8 @@ class TransactionRepository extends BaseRepository
         return Transaction::class;
     }
 
+    public function history($policy_id) {
+        
+    }
+
 }

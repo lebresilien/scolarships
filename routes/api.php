@@ -96,6 +96,8 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
 
     $route->get('policies', [StudentController::class, 'currentYearInscription']);
     $route->post('transactions', [TransactionController::class, 'store']);
+    $route->get('transactions/history/{policy_id}', [TransactionController::class, 'history']);
+    $route->delete('transactions/{ids}', [TransactionController::class, 'destroy']);
 
     $route->post('extensions', [ExtensionController::class, 'store']);
     $route->delete('extensions', [ExtensionController::class, 'destroy']);

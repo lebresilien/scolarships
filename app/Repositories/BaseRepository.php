@@ -66,7 +66,7 @@ abstract class BaseRepository
      */
     public function allQuery(array $search = [], int $skip = null, int $limit = null): Builder
     {
-        $query = $this->model->newQuery()->where('status', true)->orderBy('created_at', 'desc');
+        $query = $this->model->newQuery()->orderBy('created_at', 'desc');
 
         if (count($search)) {
             foreach($search as $key => $value) {

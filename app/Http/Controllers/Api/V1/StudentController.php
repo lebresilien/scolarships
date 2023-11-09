@@ -226,10 +226,11 @@ class StudentController extends Controller
                 'label' => $classroom['name']
             ]);
         }
-        return $this->success([
+        
+        return [
             'state' => $students,
             'additional' => $classrooms,
-        ],'currentYearInscription');
+        ];
 
     }
 

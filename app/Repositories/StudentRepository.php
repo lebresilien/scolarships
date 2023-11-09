@@ -87,7 +87,7 @@ class StudentRepository extends BaseRepository
                             'name' => $student->fname . ' ' . $student->lname,
                             'sexe' => $student->sexe,
                             'cname' => $classroom->name,
-                            'amount' => $inscription->transactions()->sum('amount'),
+                            'amount' => $inscription->transactions()->sum('amount') . ' FCFA',
                             'academy_name' => $currentAcademy->name,
                             'policy_id' => $classroom->pivot->id,
                             'status' => $inscription->status,
