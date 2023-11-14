@@ -8,9 +8,11 @@ use App\Models\{ Academy, Classroom };
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use App\Repositories\AcademyRepository;
+use App\Traits\ApiResponser;
 
 class AcademyController extends Controller
 {
+    use ApiResponser;
     /** @var AcademyRepository */
     private $academyRepository;
 
@@ -46,8 +48,8 @@ class AcademyController extends Controller
         ]);
         
         $founderAcademy = $this->academyRepository->all([
-            "name", $request->name,
-            "account_id", $request->user()->accounts[0]->id
+            "name" => $request->name,
+            "account_id" => $request->user()->accounts[0]->id
         ])->first();
 
         if($founderAcademy) return response()->json([
@@ -58,8 +60,8 @@ class AcademyController extends Controller
         ], 422);
 
         $founder_active_academy = $this->academyRepository->all([
-           "account_id", $request->user()->accounts[0]->id,
-           "status", true
+           "account_id" => $request->user()->accounts[0]->id,
+           "status" => true
         ])->first();
 
         if($founder_active_academy)  return response()->json([

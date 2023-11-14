@@ -10,11 +10,11 @@ class Inscription extends Model
 {
     use HasFactory, softDeletes;
 
-   /*  protected $fillable = [
-        'academy_id',
+    protected $fillable = [
+        'status',
         'student_id',
         'classroom_id'
-    ]; */
+    ];
 
     public function transactions() {
         return $this->hasMany(Transaction::class);

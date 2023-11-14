@@ -102,7 +102,20 @@ class TransactionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $trx = $this->transactionRepository->find($id);
+
+        if(!$trx) return response()->json([
+            "message" => "Erreur.",
+            "errors" => [
+                "message" => "Transaction non trouvée."
+            ]
+        ], 400);
+
+        $input = $request->all();
+
+        $this->transactionRepository->update($input, $id);
+
+        return response()->noContent();
     }
 
     /**

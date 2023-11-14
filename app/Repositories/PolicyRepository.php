@@ -2,18 +2,17 @@
 
 namespace App\Repositories;
 
-use App\Models\Academy;
+use App\Models\{ Inscription };
 use App\Repositories\BaseRepository;
 use Illuminate\Support\Facades\Auth;
 
-class AcademyRepository extends BaseRepository
+class PolicyRepository extends BaseRepository
 {
     protected $fieldSearchable = [
-        'slug',
-        'name',
-        'account_id',
+        'classroom_id',
+        'student_id',
         'status',
-        'id'
+        'academy_id'
     ];
 
     public function getFieldsSearchable(): array
@@ -23,7 +22,7 @@ class AcademyRepository extends BaseRepository
 
     public function model(): string
     {
-        return Academy::class;
+        return Inscription::class;
     }
 
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{ Student, Inscription, Transaction };
+use App\Models\{ Student, Inscription, Transaction, Academy };
 use App\Services\Service;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -215,9 +215,9 @@ class StudentController extends Controller
     }
 
     public function currentYearInscription(Request $request) {
-
-        $students = $this->studentRepository->currentYearInscription($request->user()->accounts[0]->sections, $this->service->currentAcademy($request));
-
+    
+        $students = $this->studentRepository->currentYearInscription($request->user()->accounts[0]->sections, $this->service->currentAcademy($request), $request->type);
+ 
         $classrooms = collect([]);
 
         foreach($this->service->classrooms($request) as $classroom) {

@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\ExtensionController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\SequenceController;
 use App\Http\Controllers\Api\V1\NoteController;
+use App\Http\Controllers\Api\V1\PolicyController;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Auth\AuthController;
@@ -94,8 +95,12 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('students/{id}/details', [StudentController::class, 'details']);
     $route->get('students/{classroom_id}/{amount}/fees', [StudentController::class, 'fees']);
 
-    $route->get('policies', [StudentController::class, 'currentYearInscription']);
+    $route->post('policies', [PolicyController::class, 'store']);
+    $route->put('policies/{id}', [PolicyController::class, 'update']);
+    $route->get('policies/{type}', [StudentController::class, 'currentYearInscription']);
+    
     $route->post('transactions', [TransactionController::class, 'store']);
+    $route->put('transactions/{id}', [TransactionController::class, 'update']);
     $route->get('transactions/history/{policy_id}', [TransactionController::class, 'history']);
     $route->delete('transactions/{ids}', [TransactionController::class, 'destroy']);
 
