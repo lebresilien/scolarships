@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\DB;
 use App\Repositories\CourseRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\GroupRepository;
+use App\Traits\ApiResponser;
 
 class CourseController extends Controller
 {
+    use ApiResponser;
     /** @var  CourseRepository */
     private $courseRepository;
     private $unitRepository;
@@ -162,17 +164,33 @@ class CourseController extends Controller
      * @param  string  $slug
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        $course = $this->courseRepository->find($id);
+        $slugs = explode(';', $ids);
 
-        if(!$course) return response()->json([
-            "message" =>"Ce cours n'existe pas.",
-            "errors" => [
-                "message" => "Ce cours n'existe pas."
-            ]
-        ],422);
-        
+        foreach($slugs as $id) {
+
+            $course = $this->courseRepository->find($id);
+
+            if(!$course) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($course->notes->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $unit = $this->courseRepository->delete($id);
+        }
+
         return response()->noContent();
 
     }

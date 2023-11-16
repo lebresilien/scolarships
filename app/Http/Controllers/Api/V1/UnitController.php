@@ -10,10 +10,11 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Auth;
 use App\Repositories\UnitRepository;
 use App\Repositories\GroupRepository;
+use App\Traits\ApiResponser;
 
 class UnitController extends Controller
 {
-
+    use ApiResponser;
     /** @var  UnitRepository */
     private $unitRepository;
     private $groupRepository;
@@ -33,9 +34,18 @@ class UnitController extends Controller
 
         $groups = $this->groupRepository->list($request);
 
+        $collection = collect([]);
+
+        foreach($groups as $group) {
+            $collection->push([
+                'value' => $group['id'],
+                'label' => $group['name']
+            ]);
+        }
+
         return [
             'state' => $units,
-            'additional' => $groups
+            'additional' => $collection
         ];
     }
 
@@ -80,7 +90,7 @@ class UnitController extends Controller
     {
         $unit = $this->unitRepository->find($id);
 
-        $this->authorize('view', $unit);
+       // $this->authorize('view', $unit);
 
         if(!$unit) return response()->json([
             "errors" => [
@@ -88,7 +98,7 @@ class UnitController extends Controller
             ]
         ], 422);
 
-        return $unit;
+        return $this->success(["name" => $unit->name, "data" => $unit->courses], 'show');
     }
 
     /**
@@ -98,19 +108,19 @@ class UnitController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
-        $unit = $this->unitRepository->all(['slug' => $slug, 'group_id' => $request->group_id ])->first();
+        $unit = $this->unitRepository->find($id);
 
         if(!$unit) return response()->json([
             "message" =>  "Error.",
             "errors" => [
-                "message" => "L'enseigment n'existe pas"
+                "message" => "L'Enseignement n'existe pas"
             ]
         ], 400);
 
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:units,name,'.$unit->id],
+            //'name' => ['required', 'string', 'max:255', 'unique:units,name,'.$unit->id],
             'group_id' => ['required', 'exists:groups,id']
         ]);
 
@@ -133,9 +143,9 @@ class UnitController extends Controller
     {
         $slugs = explode(';', $ids);
 
-        foreach($slugs as $slug) {
+        foreach($slugs as $id) {
 
-            $unit = $this->unitRepository->all(['slug' => $slug])->first();
+            $unit = $this->unitRepository->find($id);
 
             if($unit->courses->count() > 0) return response()->json([
                 "message" =>  "Erreur.",
@@ -145,10 +155,9 @@ class UnitController extends Controller
             ], 400);
         }
 
-        foreach($slugs as $slug) {
-            $unit = $this->unitRepository->all(['slug' => $slug])->first();
-            $unit->state = false;
-            $unit->save();
+        foreach($slugs as $id) {
+            $unit = $this->unitRepository->find($id);
+            $unit->delete();
         }
 
         return response()->noContent();

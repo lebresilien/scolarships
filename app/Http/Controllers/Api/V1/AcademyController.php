@@ -27,7 +27,7 @@ class AcademyController extends Controller
     public function index(Request  $request)
     {
   
-        $academies = $this->academyRepository->all(['account_id' => $request->$request->user()->accounts[0]->id]);
+        $academies = $this->academyRepository->all(['account_id' => $request->user()->accounts[0]->id]);
        
         return [
             'state' => $academies
@@ -99,23 +99,21 @@ class AcademyController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(Request $request, $id)
     {
 
-        $academy = $this->academyRepository->all([
-            "slug" => $request->slug,
-        ])->first();
+        $academy = $this->academyRepository->find($id);
 
-        if($academy)  return response()->json([
+        if(!$academy)  return response()->json([
             "message" =>  "Erreur.",
             "errors" => [
                 "message" => "Aucun element trouvé."
             ]
         ], 422);
 
-        $request->validate([
+        /* $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:academies,name,'.$academy->id],
-        ]);
+        ]); */
 
         $academy->status = false;
         $academy->save();

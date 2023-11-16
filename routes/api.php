@@ -80,7 +80,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('courses', [CourseController::class, 'index']);
     $route->get('courses/{id}', [CourseController::class, 'show']);
     $route->put('courses/{id}', [CourseController::class, 'update']);
-    $route->delete('courses/{id}', [CourseController::class, 'destroy']);
+    $route->delete('courses/{ids}', [CourseController::class, 'destroy']);
 
     $route->post('academies', [AcademyController::class, 'store']);
     $route->get('academies', [AcademyController::class, 'index']);

@@ -14,6 +14,10 @@ use Carbon\Carbon;
 use App\Repositories\ClassroomRepository;
 use App\Repositories\GroupRepository;
 use App\Repositories\BuildingRepository;
+use App\Repositories\NoteRepository;
+use App\Repositories\SequenceRepository;
+use App\Repositories\CourseRepository;
+use App\Repositories\AcademyRepository;
 
 class ClassroomController extends Controller
 {
@@ -24,13 +28,30 @@ class ClassroomController extends Controller
     private $buildingRepository;
     private $groupRepository;
     private $service;
+    private $noteRepository;
+    private $sequenceRepository;
+    private $courseRepository;
+    private $academyRepository;
     
-    public function __construct(Service $service, ClassroomRepository $classroomRepository, GroupRepository $groupRepository, BuildingRepository $buildingRepository)
+    public function __construct(
+        Service $service, 
+        ClassroomRepository $classroomRepository, 
+        GroupRepository $groupRepository, 
+        BuildingRepository $buildingRepository, 
+        NoteRepository $noteRepository,
+        SequenceRepository $sequenceRepository,
+        CourseRepository $courseRepository,
+        AcademyRepository $academyRepository
+    )
     {
         $this->service = $service;
         $this->classroomRepository = $classroomRepository;
         $this->buildingRepository = $buildingRepository;
         $this->groupRepository = $groupRepository;
+        $this->noteRepository = $noteRepository;
+        $this->sequenceRepository = $sequenceRepository;
+        $this->courseRepository = $courseRepository;
+        $this->academyRepository = $academyRepository;
     }
     /**
      * Display a listing of the resource.
@@ -107,10 +128,19 @@ class ClassroomController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $slug)
+    public function show(Request $request, $id)
     {
-        if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
-        else $classroom = $this->verify($slug);
+        //if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
+        //else $classroom = $this->verify($id);
+
+        $classroom = $this->verify($id);
+
+        if(!$classroom) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Cette salle de classe n'existe pas"
+            ]
+        ], 400);
         
         $students = $classroom->students->where('pivot.academy_id', $this->service->currentAcademy($request)->id)->where('pivot.status', 1);
         
@@ -119,6 +149,7 @@ class ClassroomController extends Controller
         });
 
         return $this->success([
+            "name" => $classroom->name,
             "count" => count($students),
             "count_men" => count($students->where('sexe', 'M')),
             "count_girl" => count($students->where('sexe', 'F')),
@@ -188,15 +219,22 @@ class ClassroomController extends Controller
         return response()->noContent();
     }
 
-    public function courses(Request $request, $slug) {
+    public function courses(Request $request, $id) {
 
-        $classroom = $this->verify($slug);
+        $classroom = $this->verify($id);
+
+        if(!$classroom) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "Cette salle de classe n'existe pas"
+            ]
+        ], 400);
 
         $sorted = $classroom->group->courses->sortBy('name', SORT_NATURAL);
 
         $current_id = $this->service->currentAcademy($request)->id;
 
-        $academy = Academy::find($current_id);
+        $academy = $this->academyRepository->find($current_id);
 
         return [
             'sequences' => $academy->sequences,
@@ -205,10 +243,10 @@ class ClassroomController extends Controller
         
     }
 
-    public function students(Request $request, $slug, $course_slug, $sequence_slug) {
+    public function students(Request $request, $id, $course_id, $sequence_id) {
 
         if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
-        else $classroom = $this->verify($slug);
+        else $classroom = $this->verify($id);
             
         $sequence = Sequence::where('slug', $sequence_slug)->first();
 
@@ -227,9 +265,8 @@ class ClassroomController extends Controller
 
         $data = $students->map(function($item) use ($classroom, $sequence, $course) {
 
-            $note = Note::where([
+            $note = $this->noteRepository->all([
                 ['sequence_id', $sequence->id],
-                ['classroom_id', $classroom->id],
                 ['course_id', $course->id],
                 ['student_id', $item['id']]
             ])->first();
@@ -244,19 +281,8 @@ class ClassroomController extends Controller
         return $this->success($data);
     }
 
-    private function verify($slug) {
-
-        $classroom = Classroom::where('slug', $slug)->first();
-
-        if(!$classroom) return response()->json([
-            "message" =>  "Error.",
-            "errors" => [
-                "message" => "Classroom not found"
-            ]
-        ], 400);
-
-        return $classroom;
-
+    private function verify($id) {
+        return $this->classroomRepository->find($id);
     }
 
     public function studentList(Request $request) {

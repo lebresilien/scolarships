@@ -25,6 +25,10 @@ class Course extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function notes() {
+        return $this->hasMany(Note::class);
+    }
+
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];
