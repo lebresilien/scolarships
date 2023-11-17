@@ -32,7 +32,7 @@ class Group extends Model
     }
 
     public function courses() {
-        return $this->belongsToMany(Course::class, 'group_course');
+        return $this->hasManyThrough(Course::class, Unit::class);
     }
 
     public function notes()

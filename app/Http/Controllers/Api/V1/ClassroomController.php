@@ -245,14 +245,16 @@ class ClassroomController extends Controller
 
     public function students(Request $request, $id, $course_id, $sequence_id) {
 
-        if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
-        else $classroom = $this->verify($id);
-            
-        $sequence = Sequence::where('slug', $sequence_slug)->first();
+        /* if($request->user()->hasRole('Enseignant')) $classroom = $request->user()->classroom;
+        else $classroom = $this->verify($id); */
 
-        $course = Course::where('slug', $course_slug)->first();
+        $classroom = $this->classroomRepository->find($id);
+            
+        $sequence = $this->sequenceRepository->find($sequence_id);
+
+        $course = $this->courseRepository->find($course_id);
         
-        if(!$sequence || !$course) return response()->json([
+        if(!$sequence || !$course || !$classroom) return response()->json([
             "message" =>  "Error.",
             "errors" => [
                 "message" => "Une erreur est survenue"
@@ -260,25 +262,32 @@ class ClassroomController extends Controller
         ], 400);
 
         $students = $classroom->students->where('pivot.academy_id', $this->service->currentAcademy($request)->id)
-                                ->where('pivot.status', '<>',  2)
+                                //->where('pivot.status', '<>',  2)
                                 ->sortBy('name', SORT_NATURAL);
 
-        $data = $students->map(function($item) use ($classroom, $sequence, $course) {
+        $data = $students->map(function($student) use ($classroom, $sequence, $course) {
 
             $note = $this->noteRepository->all([
-                ['sequence_id', $sequence->id],
-                ['course_id', $course->id],
-                ['student_id', $item['id']]
+                'sequence_id' => $sequence->id,
+                'course_id' => $course->id,
+                'student_id' => $student['id']
             ])->first();
 
             return [
-                "id" => $item['id'],
-                "name" => $item['fname']. ' ' . $item['lname'],
+                "id" => $student['id'],
+                "name" => $student['fname']. ' ' . $student['lname'],
                 "value" => $note ? $note->value : 0
             ];
         });
 
-        return $this->success($data);
+        $notes = [
+            'students' => $data,
+            'classroom' => $classroom->name,
+            'course' => $course->name,
+            'sequence' => $sequence->name
+        ];
+
+        return $this->success($notes);
     }
 
     private function verify($id) {

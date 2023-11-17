@@ -11,7 +11,6 @@ class Note extends Model
 
     protected $fillable = [
         'sequence_id',
-        'classroom_id',
         'student_id',
         'course_id',
         'value',
