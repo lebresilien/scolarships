@@ -28,7 +28,7 @@ class Section extends Model
 
     public function groups() {
         return $this->hasMany(Group::class);
-    }
+    }   
 
     public function notes()
     {

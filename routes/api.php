@@ -51,6 +51,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('sections', [SectionController::class, 'store']);
     $route->get('sections', [SectionController::class, 'index']);
     $route->put('sections/{id}', [SectionController::class, 'update']);
+    $route->get('sections/{id}', [SectionController::class, 'show']);
 
     $route->post('groups', [GroupController::class, 'store']);
     $route->get('groups', [GroupController::class, 'index']);
@@ -102,6 +103,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('transactions', [TransactionController::class, 'store']);
     $route->put('transactions/{id}', [TransactionController::class, 'update']);
     $route->get('transactions/history/{policy_id}', [TransactionController::class, 'history']);
+    $route->get('transactions/listing/{classroom_id}', [TransactionController::class, 'transactionListing']);
     $route->delete('transactions/{ids}', [TransactionController::class, 'destroy']);
 
     $route->post('extensions', [ExtensionController::class, 'store']);

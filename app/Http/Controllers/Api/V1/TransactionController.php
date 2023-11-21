@@ -166,4 +166,11 @@ class TransactionController extends Controller
             'state' => $data,
         ];
     }
+
+    public function transactionListing(Request $request, $classroom_id) {
+        
+        $students = $this->transactionRepository->transactionListing($this->service->currentAcademy($request), $classroom_id, $request->amount);
+
+        return $this->success($students, 'List');
+    }
  }

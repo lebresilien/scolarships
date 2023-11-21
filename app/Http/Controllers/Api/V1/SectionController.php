@@ -31,7 +31,7 @@ class SectionController extends Controller
         $sections = $this->sectionRepository->list();
        
         return  [
-                 'state' => $sections
+            'state' => $sections
         ];
     }
 
@@ -64,7 +64,23 @@ class SectionController extends Controller
      */
     public function show($id)
     {
-        //
+        $section = $this->sectionRepository->find($id);
+
+        if(!$section) return response()->json([
+            "message" =>  "Error.",
+            "errors" => [
+                "message" => "La section n'existe pas"
+            ]
+        ], 400);
+
+        $data = $section->groups->map(function($group) {
+            return [
+                'value' => $group->id,
+                'label' => $group->name
+            ];
+        });
+
+        return $this->success($data, 'Details');
     }
 
     /**

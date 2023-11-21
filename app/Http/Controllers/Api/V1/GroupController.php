@@ -68,7 +68,7 @@ class GroupController extends Controller
 
         $group = $this->groupRepository->create($input);
 
-        return $this->success($group, 'ajout');;
+        return $this->success($group, 'ajout');
     }
 
     /**
@@ -77,9 +77,9 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($slug)
+    public function show($id)
     {
-        $group = $this->verify($slug);
+        $group = $this->groupRepository->find($id);
 
         if(!$group) return response()->json([
             "message" =>  "Error.",
@@ -98,7 +98,7 @@ class GroupController extends Controller
             ]);
         } 
         
-        return response()->json($collection);
+        return $this->success($collection, 'Détails');
     }
 
     /**
@@ -116,7 +116,7 @@ class GroupController extends Controller
             'section_id' => ['required', 'exists:sections,id']
         ]);
         
-        $group = $this->verify($id);
+        $group = $this->groupRepository->find($id);
 
         if(!$group) return response()->json([
             "message" =>  "Error.",

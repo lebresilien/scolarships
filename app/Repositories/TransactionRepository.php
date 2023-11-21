@@ -2,7 +2,7 @@
 
 namespace App\Repositories;
 
-use App\Models\Transaction;
+use App\Models\{Classroom,Transaction, Inscription};
 use App\Repositories\BaseRepository;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,8 +24,27 @@ class TransactionRepository extends BaseRepository
         return Transaction::class;
     }
 
-    public function history($policy_id) {
+    public function transactionListing($currentAcademy, $classroom_id, $amount) {
         
+        $classroom = Classroom::find($classroom_id);
+
+        $students = $classroom->students()->wherePivot('academy_id', $currentAcademy->id)->get()->map(function ($student) use ($amount, $currentAcademy) {
+
+            $classroom = $student->classrooms()->wherePivot('academy_id', $currentAcademy->id)->first();
+
+            $inscription = Inscription::find($classroom->pivot->id);
+
+            if($inscription->transactions()->sum('amount') >= $amount) {
+                return [
+                    'name' => $student->fname . ' ' . $student->lname,
+                    'amount' => $inscription->transactions()->sum('amount'),
+                ];
+            }
+
+        });
+
+        return $students;
+
     }
 
 }
