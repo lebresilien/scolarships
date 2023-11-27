@@ -76,11 +76,13 @@ class SectionController extends Controller
         $data = $section->groups->map(function($group) {
             return [
                 'value' => $group->id,
-                'label' => $group->name
+                'label' => $group->name,
+                'name' => $group->name,
+                'description' => $group->description,
             ];
         });
 
-        return $this->success($data, 'Details');
+        return $this->success(["data" => $data, "name" => $section->name], 'Details');
     }
 
     /**
@@ -121,19 +123,33 @@ class SectionController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($ids)
     {
-        $section = $this->sectionRepository->find($id);
 
-        if(!$section) return response()->json([
-            "message" =>  "Error.",
-            "errors" => [
-                "message" => "La section n'existe pas"
-            ]
-        ], 400);
+        $slugs = explode(';', $ids);
 
-        $section->status = false;
-        $section->save();
+        foreach($slugs as $id) {
+
+            $section = $this->sectionRepository->find($id);
+
+            if(!$section) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+
+            if($section->groups->count() > 0) return response()->json([
+                "message" =>  "Erreur.",
+                "errors" => [
+                    "message" => "Vous ne pouvez pas effectuer cette opération."
+                ]
+            ], 400);
+        }
+
+        foreach($slugs as $id) {
+            $this->sectionRepository->delete($id);
+        }
 
         return response()->noContent();
     }

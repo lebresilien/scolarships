@@ -9,6 +9,7 @@ use App\Traits\ApiResponser;
 use App\Services\Service;
 use App\Repositories\StudentRepository;
 use App\Repositories\TransactionRepository;
+use App\Repositories\AbsentRepository;
 
 class PolicyController extends Controller
 {
@@ -19,12 +20,20 @@ class PolicyController extends Controller
     private $service;
     private $studentRepository;
     private $transactionRepository;
+    private $absentRepository;
 
-    public function __construct(TransactionRepository $transactionRepository, Service $service, StudentRepository $studentRepository, PolicyRepository $policyRepository)
+    public function __construct(
+        TransactionRepository $transactionRepository, 
+        Service $service, 
+        StudentRepository $studentRepository, 
+        PolicyRepository $policyRepository,
+        AbsentRepository $absentRepository
+    )
     {
         $this->policyRepository = $policyRepository;
         $this->service = $service;
         $this->studentRepository = $studentRepository;
+        $this->absentRepository = $absentRepository;
         $this->transactionRepository = $transactionRepository;
     }
     /**
@@ -132,5 +141,17 @@ class PolicyController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function absents($policy_id) {
+
+        $absents = $this->absentRepository->all(['inscription_id' => $policy_id]);
+
+        $policy = $this->policyRepository->find($policy_id);
+
+        return [
+            "state" => $absents,
+            "surname" => $policy ? $policy->student->fname . ' ' . $policy->student->lname : ''
+        ];
     }
 }

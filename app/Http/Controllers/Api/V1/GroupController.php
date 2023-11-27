@@ -88,17 +88,15 @@ class GroupController extends Controller
             ]
         ], 400);
 
-        $collection = collect([]);
+        $data = $group->classrooms->map(function($classroom) {
+            return [
+                'name' => $classroom->name,
+                'description' => $classroom->description,
+                'slug' => $classroom->slug
+            ];
+        });
         
-        foreach($group->classrooms as $classroom) {
-            $collection->push([
-                "value" => $classroom->id, 
-                "label" => $classroom->name,
-                "slug" => $classroom->slug
-            ]);
-        } 
-        
-        return $this->success($collection, 'Détails');
+        return $this->success(["data" => $data, "name" => $group->name], 'Details');
     }
 
     /**

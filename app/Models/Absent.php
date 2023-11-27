@@ -11,9 +11,9 @@ class Absent extends Model
     use HasFactory, softDeletes;
 
     protected $fillable = [
-        'account_id',
-        'name',
-        'slug',
+        'inscription_id',
+        'day',
+        'hour',
         'status'
     ];
 }

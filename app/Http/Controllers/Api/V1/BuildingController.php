@@ -61,9 +61,9 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($slug)
+    public function show($id)
     {
-        $building = $this->verify($slug);
+        $building = $this->verify($id);
 
         if(!$building)  return response()->json([
             "message" =>  "Error.",
@@ -72,16 +72,15 @@ class BuildingController extends Controller
             ]
         ], 400);
 
-        $collection = collect([]);
+        $data = $building->classrooms->map(function($group) {
+            return [
+                'name' => $group->name,
+                'description' => $group->description,
+            ];
+        });
 
-        foreach($building->classrooms as $classroom) {
-            $collection->push([
-                'name' => $classroom->name,
-                'description' => $classroom->description
-            ]);
-        }
+        return $this->success(["data" => $data, "name" => $building->name], 'Details');
 
-        return $this->success($collection);
     }
 
     /**

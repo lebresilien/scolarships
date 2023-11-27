@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\SequenceController;
 use App\Http\Controllers\Api\V1\NoteController;
 use App\Http\Controllers\Api\V1\PolicyController;
+use App\Http\Controllers\Api\V1\AbsentController;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Auth\AuthController;
@@ -52,6 +53,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('sections', [SectionController::class, 'index']);
     $route->put('sections/{id}', [SectionController::class, 'update']);
     $route->get('sections/{id}', [SectionController::class, 'show']);
+    $route->delete('sections/{ids}', [SectionController::class, 'destroy']);
 
     $route->post('groups', [GroupController::class, 'store']);
     $route->get('groups', [GroupController::class, 'index']);
@@ -99,7 +101,8 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->post('policies', [PolicyController::class, 'store']);
     $route->put('policies/{id}', [PolicyController::class, 'update']);
     $route->get('policies/{type}', [StudentController::class, 'currentYearInscription']);
-    
+    $route->get('policies/{policy_id}/absents', [PolicyController::class, 'absents']);
+
     $route->post('transactions', [TransactionController::class, 'store']);
     $route->put('transactions/{id}', [TransactionController::class, 'update']);
     $route->get('transactions/history/{policy_id}', [TransactionController::class, 'history']);
@@ -126,6 +129,10 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->put('sequences/{id}', [SequenceController::class, 'update']);
 
     $route->post('notes', [NoteController::class, 'store']);
+
+    $route->post('absents', [AbsentController::class, 'store']);
+    $route->put('absents/{id}', [AbsentController::class, 'update']);
+    $route->delete('absents/{ids}', [AbsentController::class, 'destroy']);
 
     $route->post('signature_pad', [AccountController::class, 'signature_pad']);
 

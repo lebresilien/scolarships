@@ -12,7 +12,7 @@ class AbsentRepository extends BaseRepository
         'inscription_id',
         'hour',
         'date',
-        'staus'
+        'status'
     ];
 
     public function getFieldsSearchable(): array

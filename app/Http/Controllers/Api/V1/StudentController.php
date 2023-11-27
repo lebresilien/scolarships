@@ -134,7 +134,7 @@ class StudentController extends Controller
             ]
         ], 400);
 
-        return $this->success($student, 'Details');
+        return $this->success(["data" => $student, "name" => $student->lname], 'Details');
 
     }
 
