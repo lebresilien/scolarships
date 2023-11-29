@@ -23,10 +23,7 @@ Route::get('/', function () {
 });
 
 Route::get('/test', function () {
-  return now()->format('Y');
-   
-   
-  
+  return "cameroun " . now()->format('Y');
 });
 
 
