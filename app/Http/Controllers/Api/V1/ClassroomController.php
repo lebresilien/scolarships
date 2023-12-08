@@ -265,26 +265,28 @@ class ClassroomController extends Controller
                                 //->where('pivot.status', '<>',  2)
                                 ->sortBy('name', SORT_NATURAL);
 
-        $data = $students->map(function($student) use ($classroom, $sequence, $course) {
+        $result = collect([]);
 
+        foreach ($students as $student) {
             $note = $this->noteRepository->all([
                 'sequence_id' => $sequence->id,
                 'course_id' => $course->id,
                 'student_id' => $student['id']
             ])->first();
 
-            return [
+            $result->push([
                 "id" => $student['id'],
                 "name" => $student['fname']. ' ' . $student['lname'],
                 "value" => $note ? $note->value : 0
-            ];
-        });
+            ]);
+        }
 
         $notes = [
-            'students' => $data,
+            'students' => $result,
             'classroom' => $classroom->name,
             'course' => $course->name,
-            'sequence' => $sequence->name
+            'sequence' => $sequence->name,
+            'status' => $sequence->status,
         ];
 
         return $this->success($notes);
