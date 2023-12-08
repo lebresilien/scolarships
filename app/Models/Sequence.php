@@ -14,7 +14,8 @@ class Sequence extends Model
         'academy_id',
         'name',
         'slug',
-        'description'
+        'description',
+        'status'
     ];
 
     protected $casts = [

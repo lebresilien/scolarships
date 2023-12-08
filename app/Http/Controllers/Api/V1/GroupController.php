@@ -92,7 +92,9 @@ class GroupController extends Controller
             return [
                 'name' => $classroom->name,
                 'description' => $classroom->description,
-                'slug' => $classroom->slug
+                'slug' => $classroom->slug,
+                'label' => $classroom->name,
+                'value' => $classroom->id
             ];
         });
         
