@@ -33,7 +33,7 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $courses = $this->courseRepository->list($request);
-        
+
         $units = $this->unitRepository->list($request);
 
         $collection = collect([]);
@@ -46,7 +46,7 @@ class CourseController extends Controller
             ]);
         }
 
-        foreach($courses as $course) {
+        foreach($courses as $index => $course) {
             $collection->push([
                 'id' => $course->id,
                 'name' => $course->name,
@@ -58,6 +58,7 @@ class CourseController extends Controller
                     'value' => $course->unit->id,
                     'label' => $course->unit->name,
                 ],
+                'index' => $index + 1
             ]);
         }
 
@@ -101,7 +102,7 @@ class CourseController extends Controller
         $input['slug'] = Str::slug($request->name, '-');
 
         $course = $this->courseRepository->create($input);
-        
+
         return $this->success($course, 'ajout');
     }
 
@@ -141,7 +142,7 @@ class CourseController extends Controller
         ]);
 
         $course = $this->courseRepository->find($id);
-        
+
         if(!$course) return response()->json([
             "message" =>"Ce cours n'existe pas.",
             "errors" => [
