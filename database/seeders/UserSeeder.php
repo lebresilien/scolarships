@@ -40,11 +40,11 @@ class UserSeeder extends Seeder
                 'slug' => Str::slug('univers school', '-')
             ]);
 
-            $user->accounts()->attach($account->id); 
+            $user->accounts()->attach($account->id);
 
-            event(new Registered($user));
+            //event(new Registered($user));
 
-            Auth::login($user);
+            //Auth::login($user);
 
             DB::commit();
 

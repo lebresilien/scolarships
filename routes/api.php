@@ -35,7 +35,7 @@ use App\Http\Controllers\Auth\AuthController;
 |
 */
 
-Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
@@ -48,7 +48,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
 
     $route->post('invitation', InvitationController::class);
     $route->put('users', [UserController::class, 'update']);
-    
+
     $route->post('sections', [SectionController::class, 'store']);
     $route->get('sections', [SectionController::class, 'index']);
     $route->put('sections/{id}', [SectionController::class, 'update']);
@@ -168,10 +168,10 @@ Route::get('v1/ho', function() {
 
    /*  $username = 'dcf5f9f7-eb61-40be-ab3c-557f6b51cbd4';
 	$password = '4accc57e7c434f9f823c8644b5a2c03b';
-	
+
 	$auth = $username . ':' . $password;
 	$credentials = base64_encode($auth);
-	
+
 	echo $credentials; */
     //Storage::makeDirectory('public/test');
 
@@ -185,4 +185,4 @@ Route::get('v1/ho', function() {
 });
 
 
- 
+
