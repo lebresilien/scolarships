@@ -46,15 +46,15 @@ class UnitController extends Controller
         return $this->success($units, 'list');
     }
 
-    public function create() {
+    public function create(Request $request) {
 
         $data = collect([]);
 
         $units = $this->unitRepository->list($request);
 
         foreach($units as $unit) {
-            $collection->push([
-                'value' => $unit['id'],
+            $data->push([
+                'value' => strval($unit['id']),
                 'label' => $unit['name']
             ]);
         }
