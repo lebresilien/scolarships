@@ -38,20 +38,20 @@ class CourseRepository extends BaseRepository
                     if($group->units) {
 
                         foreach($group->units as $unit)
-                        {  
+                        {
                             foreach($unit->courses as $course) {
                                 array_push($data, $course);
                             }
                         }
                     }
-                    
+
                 }
             }
-            
+
         }
 
         return collect($data)->unique('name');
-        
+
     }
 
 }

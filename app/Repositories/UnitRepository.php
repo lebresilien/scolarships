@@ -26,7 +26,7 @@ class UnitRepository extends BaseRepository
 
     public function list($request) {
 
-        $units = array();
+        $units = collect([]);
 
         $sections = Auth::user()->accounts[0]->sections;
 
@@ -38,10 +38,10 @@ class UnitRepository extends BaseRepository
 
                     foreach($group->units as $unit) {
 
-                        array_push($units, [
-                            'id' => $unit->id, 
-                            'name' => $unit->name, 
-                            'slug' => $unit->slug, 
+                        $units->push([
+                            'id' => $unit->id,
+                            'name' => $unit->name,
+                            'slug' => $unit->slug,
                             'description' => $unit->description,
                             'group' => ['value' => $unit->group->id, 'label' => $unit->group->name],
                             'created_at' => $unit->created_at->format('Y-m-d'),
@@ -50,7 +50,7 @@ class UnitRepository extends BaseRepository
                     }
                 }
             }
-            
+
         }
 
         return $units;

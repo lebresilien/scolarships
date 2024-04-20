@@ -43,10 +43,23 @@ class UnitController extends Controller
             ]);
         }
 
-        return [
-            'state' => $units,
-            'additional' => $collection
-        ];
+        return $this->success($units, 'list');
+    }
+
+    public function create() {
+
+        $data = collect([]);
+
+        $units = $this->unitRepository->list($request);
+
+        foreach($units as $unit) {
+            $collection->push([
+                'value' => $unit['id'],
+                'label' => $unit['name']
+            ]);
+        }
+
+        return $this->success($data, 'list');
     }
 
     /**
