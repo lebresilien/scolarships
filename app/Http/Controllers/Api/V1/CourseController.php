@@ -167,32 +167,18 @@ class CourseController extends Controller
      * @param  string  $slug
      * @return \Illuminate\Http\Response
      */
-    public function destroy($ids)
+    public function destroy($id)
     {
-        $slugs = explode(';', $ids);
+        $course = $this->courseRepository->find($id);
 
-        foreach($slugs as $id) {
+        if(!$course) return response()->json([
+            "message" =>  "Erreur.",
+            "errors" => [
+                "message" => "Aucun element trouvé."
+            ]
+        ], 400);
 
-            $course = $this->courseRepository->find($id);
-
-            if(!$course) return response()->json([
-                "message" =>  "Erreur.",
-                "errors" => [
-                    "message" => "Vous ne pouvez pas effectuer cette opération."
-                ]
-            ], 400);
-
-            if($course->notes->count() > 0) return response()->json([
-                "message" =>  "Erreur.",
-                "errors" => [
-                    "message" => "Vous ne pouvez pas effectuer cette opération."
-                ]
-            ], 400);
-        }
-
-        foreach($slugs as $id) {
-            $unit = $this->courseRepository->delete($id);
-        }
+        $this->courseRepository->delete($id);
 
         return response()->noContent();
 

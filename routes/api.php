@@ -118,7 +118,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('units', [UnitController::class, 'index']);
     $route->get('units/{id}', [UnitController::class, 'show']);
     $route->put('units/{id}', [UnitController::class, 'update']);
-    $route->delete('units/{ids}', [UnitController::class, 'destroy']);
+    $route->delete('units/{id}', [UnitController::class, 'destroy']);
 
     $route->post('sequences', [SequenceController::class, 'store']);
     $route->get('sequences', [SequenceController::class, 'index']);
