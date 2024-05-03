@@ -39,7 +39,7 @@ class UnitRepository extends BaseRepository
                     foreach($group->units as $unit) {
 
                         $units->push([
-                            'id' => $unit->id,
+                            'id' => strval($unit->id),
                             'name' => $unit->name,
                             'description' => $unit->description,
                             'group' => ['value' => $unit->group->id, 'label' => $unit->group->name],

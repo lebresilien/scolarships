@@ -114,7 +114,6 @@ Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum' ],  function($rou
     $route->get('extensions/download/{id}', [ExtensionController::class, 'download']);
 
     $route->post('units', [UnitController::class, 'store']);
-    $route->get('units/create', [UnitController::class, 'create']);
     $route->get('units', [UnitController::class, 'index']);
     $route->get('units/{id}', [UnitController::class, 'show']);
     $route->put('units/{id}', [UnitController::class, 'update']);

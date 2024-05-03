@@ -35,7 +35,7 @@ class GroupRepository extends BaseRepository
 
                 foreach($section->groups as $group) {
                     array_push($groups, [
-                        'id' => $group->id,
+                        'id' => strval($group->id),
                         'name' => $group->name,
                         'created_at' => $group->created_at->format('Y-m-d'),
                         'fees' => $group['fees'],
@@ -49,7 +49,7 @@ class GroupRepository extends BaseRepository
                 }
 
             }
-            
+
         }
 
         return $groups;

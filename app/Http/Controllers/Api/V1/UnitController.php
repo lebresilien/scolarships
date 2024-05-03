@@ -32,34 +32,7 @@ class UnitController extends Controller
     {
         $units = $this->unitRepository->list($request);
 
-      /*   $groups = $this->groupRepository->list($request);
-
-        $collection = collect([]);
-
-        foreach($groups as $group) {
-            $collection->push([
-                'value' => $group['id'],
-                'label' => $group['name']
-            ]);
-        } */
-
         return $this->success($units, 'list');
-    }
-
-    public function create(Request $request) {
-
-        $data = collect([]);
-
-        $units = $this->unitRepository->list($request);
-
-        foreach($units as $unit) {
-            $data->push([
-                'value' => strval($unit['id']),
-                'label' => $unit['name']
-            ]);
-        }
-
-        return $this->success($data, 'list');
     }
 
     /**

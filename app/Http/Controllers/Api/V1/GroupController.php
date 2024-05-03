@@ -32,21 +32,9 @@ class GroupController extends Controller
     public function index(Request $request)
     {
         $groups = $this->groupRepository->list($request);
-        $sections = $this->sectionRepository->list($request);
+        //$sections = $this->sectionRepository->list($request);
 
-        $unit_collection = collect([]);
-
-        foreach($sections as $section) {
-            $unit_collection->push([
-                'value' => $section['id'],
-                'label' => $section['name']
-            ]);
-        }
-
-        return [
-            'state' => $groups,
-            'additional' => $unit_collection
-        ];
+        return $this->success($groups, 'list');
     }
 
     /**
@@ -97,7 +85,7 @@ class GroupController extends Controller
                 'value' => $classroom->id
             ];
         });
-        
+
         return $this->success(["data" => $data, "name" => $group->name], 'Details');
     }
 
@@ -115,7 +103,7 @@ class GroupController extends Controller
             'fees' => ['regex:/^[0-9]+(\.[0-9][0-9]?)?$/'],
             'section_id' => ['required', 'exists:sections,id']
         ]);
-        
+
         $group = $this->groupRepository->find($id);
 
         if(!$group) return response()->json([
