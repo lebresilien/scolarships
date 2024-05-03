@@ -32,7 +32,7 @@ class UnitController extends Controller
     {
         $units = $this->unitRepository->list($request);
 
-        $groups = $this->groupRepository->list($request);
+      /*   $groups = $this->groupRepository->list($request);
 
         $collection = collect([]);
 
@@ -41,7 +41,7 @@ class UnitController extends Controller
                 'value' => $group['id'],
                 'label' => $group['name']
             ]);
-        }
+        } */
 
         return $this->success($units, 'list');
     }

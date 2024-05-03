@@ -33,18 +33,7 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $courses = $this->courseRepository->list($request);
-
-        //$units = $this->unitRepository->list($request);
-
         $collection = collect([]);
-        /* $unit_collection = collect([]);
-
-        foreach($units as $unit) {
-            $unit_collection->push([
-                'value' => strval($unit['id']),
-                'label' => $unit['name']
-            ]);
-        } */
 
         foreach($courses as $index => $course) {
             $collection->push([
@@ -62,12 +51,6 @@ class CourseController extends Controller
         }
 
         return $this->success($collection, 'list');
-
-       /*  return [
-            'state' => $collection,
-            'additional' => $unit_collection
-        ]; */
-
     }
 
     /**
