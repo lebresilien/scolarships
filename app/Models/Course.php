@@ -33,6 +33,4 @@ class Course extends Model
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];
-
-    //protected $with = ['unit'];
 }

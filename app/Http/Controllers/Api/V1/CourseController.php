@@ -57,8 +57,7 @@ class CourseController extends Controller
                 'group' => [
                     'value' => $course->unit->id,
                     'label' => $course->unit->name,
-                ],
-                'index' => $index + 1
+                ]
             ]);
         }
 
@@ -85,10 +84,6 @@ class CourseController extends Controller
             'coeff' => ['required', 'numeric'],
         ]);
 
-       /*  DB::beginTransaction();
-
-        try { */
-
         $founderCourse = $this->courseRepository->all([
             'name' => $request->name,
             'unit_id' => $request->unit_id
@@ -104,6 +99,8 @@ class CourseController extends Controller
         $input['slug'] = Str::slug($request->name, '-');
 
         $course = $this->courseRepository->create($input);
+
+        $course->group = ['value' => $course->unit->id, 'label' => $course->unit->name];
 
         return $this->success($course, 'ajout');
     }
@@ -153,7 +150,6 @@ class CourseController extends Controller
         ],422);
 
         $input = $request->all();
-
         $input['slug'] = Str::slug($request->name, '-');
 
         $this->courseRepository->update($input, $id);
